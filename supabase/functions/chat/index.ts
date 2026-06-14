@@ -6,9 +6,9 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 // developer-only mode. Swap via env var without redeploying logic changes.
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const PRIMARY_MODEL =
-  Deno.env.get("OPENROUTER_MODEL") || "meta-llama/llama-3.3-70b-instruct:free";
+  Deno.env.get("OPENROUTER_MODEL") || "qwen/qwen3-coder:free";
 const THINK_MODEL =
-  Deno.env.get("OPENROUTER_THINK_MODEL") || "meta-llama/llama-3.3-70b-instruct:free";
+  Deno.env.get("OPENROUTER_THINK_MODEL") || "qwen/qwen3-coder:free";
 
 // Daily request cap per user while running on free-tier models.
 const DAILY_LIMIT = Number(Deno.env.get("DAILY_MESSAGE_LIMIT") || "30");
