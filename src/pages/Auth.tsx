@@ -1,14 +1,13 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { lovable } from "@/integrations/lovable/index";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
-import { Bot, ArrowLeft, Eye, EyeOff, Check, X, Mail, Loader2 } from "lucide-react";
+import { Bot, ArrowLeft, Eye, EyeOff, Check, X, Mail, Loader2, Github } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,6 +41,7 @@ export default function Auth() {
   const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [githubLoading, setGithubLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const { signIn, signUp } = useAuth();
@@ -49,16 +49,21 @@ export default function Auth() {
 
   const strength = useMemo(() => getPasswordStrength(password), [password]);
 
-  const handleGoogleSignIn = async () => {
-    setGoogleLoading(true);
+  const handleOAuth = async (provider: "google" | "github") => {
+    const setLoadingFn = provider === "google" ? setGoogleLoading : setGithubLoading;
+    setLoadingFn(true);
     try {
-      const { error } = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: `${window.location.origin}/auth/callback`,
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          scopes: provider === "github" ? "read:user user:email repo" : undefined,
+        },
       });
       if (error) throw error;
     } catch (error: any) {
       toast({ title: "OAuth Error", description: error.message, variant: "destructive" });
-      setGoogleLoading(false);
+      setLoadingFn(false);
     }
   };
 
@@ -163,7 +168,7 @@ export default function Auth() {
                   type="button"
                   variant="outline"
                   className="w-full h-11 gap-2"
-                  onClick={handleGoogleSignIn}
+                  onClick={() => handleOAuth("google")}
                   disabled={googleLoading}
                 >
                   {googleLoading ? (
@@ -177,6 +182,17 @@ export default function Auth() {
                     </svg>
                   )}
                   Continue with Google
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full h-11 gap-2 mt-2"
+                  onClick={() => handleOAuth("github")}
+                  disabled={githubLoading}
+                >
+                  {githubLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Github className="h-4 w-4" />}
+                  Continue with GitHub
                 </Button>
 
                 <div className="relative my-6">
@@ -240,8 +256,8 @@ export default function Auth() {
                           </div>
                           <span className="text-xs text-muted-foreground">{strength.label}</span>
                         </div>
-                        <ul className="space-y-1">
-                          ={PASSWORD_RULES.map((rule) => (
+                         <ul className="space-y-1">
+                          {PASSWORD_RULES.map((rule) => (
                             <li key={rule.label} className="flex items-center gap-1.5 text-xs">
                               {rule.test(password) ? (
                                 <Check className="h-3 w-3 text-accent" />
