@@ -1,0 +1,86 @@
+{
+  "name": "vscode-karadev",
+  "displayName": "Karadev — AI Coding Assistant",
+  "description": "Chat with Karacter, your AI teammate, directly from VS Code. Sends selected code as context to your Karadev workspace.",
+  "version": "0.1.0",
+  "publisher": "karacter-web",
+  "icon": "media/icon.png",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["AI", "Programming Languages", "Other"],
+  "activationEvents": ["onStartupFinished"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      { "command": "karadev.openChat", "title": "Karadev: Open Chat" },
+      { "command": "karadev.askWithSelection", "title": "Karadev: Ask About Selected Code" },
+      { "command": "karadev.explainSelection", "title": "Karadev: Explain Selected Code" },
+      { "command": "karadev.fixSelection", "title": "Karadev: Fix Selected Code" },
+      { "command": "karadev.signIn", "title": "Karadev: Sign In" },
+      { "command": "karadev.signOut", "title": "Karadev: Sign Out" },
+      { "command": "karadev.clearChat", "title": "Karadev: Clear Conversation" }
+    ],
+    "menus": {
+      "editor/context": [
+        { "command": "karadev.askWithSelection", "when": "editorHasSelection", "group": "karadev@1" },
+        { "command": "karadev.explainSelection", "when": "editorHasSelection", "group": "karadev@2" },
+        { "command": "karadev.fixSelection", "when": "editorHasSelection", "group": "karadev@3" }
+      ]
+    },
+    "keybindings": [
+      { "command": "karadev.openChat", "key": "ctrl+shift+k", "mac": "cmd+shift+k" },
+      { "command": "karadev.askWithSelection", "key": "ctrl+shift+a", "mac": "cmd+shift+a", "when": "editorHasSelection" }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "karadev-sidebar",
+          "title": "Karadev",
+          "icon": "media/sidebar-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "karadev-sidebar": [
+        { "id": "karadev.chatView", "name": "Karacter", "type": "webview" }
+      ]
+    },
+    "configuration": {
+      "title": "Karadev",
+      "properties": {
+        "karadev.supabaseUrl": {
+          "type": "string",
+          "default": "",
+          "description": "Supabase project URL, e.g. https://xxxx.supabase.co"
+        },
+        "karadev.deepThinking": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable deep thinking mode by default."
+        },
+        "karadev.includeFileContext": {
+          "type": "boolean",
+          "default": true,
+          "description": "Send active filename and language with every message."
+        },
+        "karadev.dailyLimitWarning": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show a warning toast when approaching the daily message limit."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "esbuild src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node",
+    "watch": "npm run compile -- --watch",
+    "package": "npm run compile && vsce package",
+    "vscode:prepublish": "npm run compile"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0",
+    "@vscode/vsce": "^2.24.0",
+    "esbuild": "^0.20.0"
+  }
+}
