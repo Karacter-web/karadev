@@ -125,7 +125,7 @@ serve(async (req) => {
           headers: {
             Authorization: `Bearer ${OPENROUTER_API_KEY}`,
             "Content-Type": "application/json",
-            "HTTP-Referer": "https://karadev-delta.vercel.app",
+            "HTTP-Referer": "https://dev.karacterhub.xyz",
             "X-Title": "Karadev",
           },
           body: JSON.stringify({
@@ -180,7 +180,7 @@ Be brief. This analysis is internal and will NOT be shown to the user.`,
         headers: {
           Authorization: `Bearer ${OPENROUTER_API_KEY}`,
           "Content-Type": "application/json",
-          "HTTP-Referer": "https://karadev-delta.vercel.app",
+          "HTTP-Referer": "https://dev.karacterhub.xyz",
           "X-Title": "Karadev",
         },
         body: JSON.stringify({
