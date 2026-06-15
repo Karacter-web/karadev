@@ -117,6 +117,38 @@ export default function Chat() {
     })();
   }, [activeConvId]);
 
+  // Realtime: append messages inserted by other users (or other tabs) live
+  useEffect(() => {
+    if (!activeConvId || !user) return;
+    const channel = supabase
+      .channel(`messages:${activeConvId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `conversation_id=eq.${activeConvId}`,
+        },
+        (payload) => {
+          const row = payload.new as { role: string; content: string; user_id: string | null };
+          // Skip messages this user just sent — they're already optimistic in state
+          if (row.user_id === user.id) return;
+          setMessages((prev) => {
+            // Avoid duplicates if same content/role is already the last entry
+            const last = prev[prev.length - 1];
+            if (last && last.role === row.role && last.content === row.content) return prev;
+            return [...prev, { role: row.role as "user" | "assistant", content: row.content }];
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [activeConvId, user]);
+
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, isThinking]);
