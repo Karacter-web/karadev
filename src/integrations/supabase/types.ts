@@ -10,10 +10,123 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.1"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
+      ai_audit_logs: {
+        Row: {
+          completion_tokens: number | null
+          conversation_id: string | null
+          created_at: string
+          error: string | null
+          id: string
+          latency_ms: number | null
+          model: string | null
+          prompt_tokens: number | null
+          source: Database["public"]["Enums"]["ai_agent_source"]
+          status: string
+          total_tokens: number | null
+          user_id: string
+          workspace_id: string | null
+        }
+        Insert: {
+          completion_tokens?: number | null
+          conversation_id?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          latency_ms?: number | null
+          model?: string | null
+          prompt_tokens?: number | null
+          source?: Database["public"]["Enums"]["ai_agent_source"]
+          status?: string
+          total_tokens?: number | null
+          user_id: string
+          workspace_id?: string | null
+        }
+        Update: {
+          completion_tokens?: number | null
+          conversation_id?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          latency_ms?: number | null
+          model?: string | null
+          prompt_tokens?: number | null
+          source?: Database["public"]["Enums"]["ai_agent_source"]
+          status?: string
+          total_tokens?: number | null
+          user_id?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_audit_logs_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_audit_logs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      api_keys: {
+        Row: {
+          created_at: string
+          created_by: string
+          expires_at: string | null
+          id: string
+          key_hash: string
+          key_prefix: string
+          last_used_at: string | null
+          name: string
+          revoked_at: string | null
+          scopes: string[]
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          expires_at?: string | null
+          id?: string
+          key_hash: string
+          key_prefix: string
+          last_used_at?: string | null
+          name: string
+          revoked_at?: string | null
+          scopes?: string[]
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          expires_at?: string | null
+          id?: string
+          key_hash?: string
+          key_prefix?: string
+          last_used_at?: string | null
+          name?: string
+          revoked_at?: string | null
+          scopes?: string[]
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_keys_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversations: {
         Row: {
           created_at: string
@@ -58,6 +171,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      daily_usage: {
+        Row: {
+          count: number
+          updated_at: string
+          usage_date: string
+          user_id: string
+        }
+        Insert: {
+          count?: number
+          updated_at?: string
+          usage_date?: string
+          user_id: string
+        }
+        Update: {
+          count?: number
+          updated_at?: string
+          usage_date?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       messages: {
         Row: {
@@ -123,6 +257,7 @@ export type Database = {
       }
       prompt_templates: {
         Row: {
+          category: string | null
           content: string
           created_at: string
           created_by: string
@@ -131,6 +266,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          category?: string | null
           content: string
           created_at?: string
           created_by: string
@@ -139,6 +275,7 @@ export type Database = {
           workspace_id: string
         }
         Update: {
+          category?: string | null
           content?: string
           created_at?: string
           created_by?: string
@@ -304,6 +441,7 @@ export type Database = {
           id: string
           name: string
           owner_id: string
+          slug: string | null
           updated_at: string
         }
         Insert: {
@@ -311,6 +449,7 @@ export type Database = {
           id?: string
           name: string
           owner_id: string
+          slug?: string | null
           updated_at?: string
         }
         Update: {
@@ -318,6 +457,7 @@ export type Database = {
           id?: string
           name?: string
           owner_id?: string
+          slug?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -345,7 +485,14 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "developer" | "viewer"
+      ai_agent_source: "web" | "vscode" | "embed" | "api"
+      app_role:
+        | "admin"
+        | "developer"
+        | "viewer"
+        | "user"
+        | "moderator"
+        | "owner"
       task_status: "pending" | "in_progress" | "done"
     }
     CompositeTypes: {
@@ -474,7 +621,8 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "developer", "viewer"],
+      ai_agent_source: ["web", "vscode", "embed", "api"],
+      app_role: ["admin", "developer", "viewer", "user", "moderator", "owner"],
       task_status: ["pending", "in_progress", "done"],
     },
   },
