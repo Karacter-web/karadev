@@ -1,10 +1,11 @@
 import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Moon, Sun, Database, Shield, Cloud, Key, Cpu, Globe, Radio, GitBranch, RefreshCw, Eye, EyeOff, Check, Github } from "lucide-react";
+import { Moon, Sun, Database, Shield, Cloud, Key, Cpu, Globe, Radio, GitBranch, RefreshCw, Eye, EyeOff, Check, Github, Trash2, AlertTriangle, Copy, Plus } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -39,12 +40,28 @@ import { getGitHubToken, setGitHubToken, hasGitHubToken } from "@/lib/github-tok
 
 export default function SettingsPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [dark, setDark] = useState(false);
   const [dbStatus, setDbStatus] = useState<"checking" | "connected" | "error">("checking");
   const [ghToken, setGhToken] = useState("");
   const [showToken, setShowToken] = useState(false);
   const [tokenSaved, setTokenSaved] = useState(false);
   const [hasStoredToken, setHasStoredToken] = useState(false);
+
+  // Workspace admin state
+  const [workspaces, setWorkspaces] = useState<any[]>([]);
+  const [activeWs, setActiveWs] = useState<any | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [wsName, setWsName] = useState("");
+  const [savingWs, setSavingWs] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
+  // API keys state
+  const [apiKeys, setApiKeys] = useState<any[]>([]);
+  const [newKeyName, setNewKeyName] = useState("");
+  const [creatingKey, setCreatingKey] = useState(false);
+  const [generatedKey, setGeneratedKey] = useState<string | null>(null);
 
   useEffect(() => {
     setDark(document.documentElement.classList.contains("dark"));
@@ -60,6 +77,104 @@ export default function SettingsPage() {
     const interval = setInterval(check, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  // Load workspaces user is a member of, pick first admin one
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const { data } = await supabase
+        .from("workspace_members")
+        .select("role, workspace:workspace_id(id, name, slug, owner_id)")
+        .eq("user_id", user.id);
+      const rows = (data || []).map((r: any) => ({ ...r.workspace, role: r.role })).filter(Boolean);
+      setWorkspaces(rows);
+      const adminWs = rows.find((w: any) => w.role === "admin") || rows[0];
+      if (adminWs) {
+        setActiveWs(adminWs);
+        setIsAdmin(adminWs.role === "admin");
+        setWsName(adminWs.name);
+      }
+    })();
+  }, [user]);
+
+  // Load API keys for active workspace
+  useEffect(() => {
+    if (!activeWs?.id || !isAdmin) { setApiKeys([]); return; }
+    (async () => {
+      const { data } = await supabase
+        .from("api_keys")
+        .select("id, name, key_prefix, created_at, last_used_at, revoked_at, expires_at")
+        .eq("workspace_id", activeWs.id)
+        .order("created_at", { ascending: false });
+      setApiKeys(data || []);
+    })();
+  }, [activeWs, isAdmin, generatedKey]);
+
+  const renameWorkspace = async () => {
+    if (!activeWs || !wsName.trim() || wsName === activeWs.name) return;
+    setSavingWs(true);
+    const { error } = await supabase
+      .from("workspaces")
+      .update({ name: wsName.trim() })
+      .eq("id", activeWs.id);
+    setSavingWs(false);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Workspace renamed" });
+    setActiveWs({ ...activeWs, name: wsName.trim() });
+  };
+
+  const deleteWorkspace = async () => {
+    if (!activeWs || deleteConfirm !== activeWs.name) return;
+    setDeleting(true);
+    const { error } = await supabase.from("workspaces").delete().eq("id", activeWs.id);
+    if (error) {
+      setDeleting(false);
+      toast({ title: "Delete failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Workspace deleted" });
+    await supabase.auth.signOut();
+    navigate("/auth");
+  };
+
+  const createApiKey = async () => {
+    if (!activeWs || !user || !newKeyName.trim()) return;
+    setCreatingKey(true);
+    try {
+      // Generate a 32-byte random token, hex-encoded
+      const bytes = new Uint8Array(32);
+      crypto.getRandomValues(bytes);
+      const raw = "kdv_" + Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join("");
+      const hashBuf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(raw));
+      const key_hash = Array.from(new Uint8Array(hashBuf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+      const key_prefix = raw.slice(0, 12);
+      const { error } = await supabase.from("api_keys").insert({
+        workspace_id: activeWs.id,
+        created_by: user.id,
+        name: newKeyName.trim(),
+        key_hash,
+        key_prefix,
+      });
+      if (error) throw error;
+      setGeneratedKey(raw);
+      setNewKeyName("");
+      toast({ title: "API key created", description: "Copy it now — it won't be shown again." });
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    } finally {
+      setCreatingKey(false);
+    }
+  };
+
+  const revokeApiKey = async (id: string) => {
+    const { error } = await supabase.from("api_keys").update({ revoked_at: new Date().toISOString() }).eq("id", id);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    setApiKeys((prev) => prev.map((k) => (k.id === id ? { ...k, revoked_at: new Date().toISOString() } : k)));
+    toast({ title: "API key revoked" });
+  };
 
   const saveGhToken = () => {
     if (!ghToken.trim()) return;
@@ -126,6 +241,114 @@ export default function SettingsPage() {
           </Button>
         </CardContent>
       </Card>
+
+      {/* Workspace Settings (admins only) */}
+      {activeWs && isAdmin && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Workspace Settings</CardTitle>
+                <CardDescription>Manage <strong>{activeWs.name}</strong> — admin only</CardDescription>
+              </div>
+              {workspaces.length > 1 && (
+                <select
+                  value={activeWs.id}
+                  onChange={(e) => {
+                    const w = workspaces.find((x: any) => x.id === e.target.value);
+                    if (w) { setActiveWs(w); setIsAdmin(w.role === "admin"); setWsName(w.name); }
+                  }}
+                  className="text-xs bg-muted border border-border rounded px-2 py-1"
+                >
+                  {workspaces.map((w: any) => <option key={w.id} value={w.id}>{w.name}</option>)}
+                </select>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>Workspace name</Label>
+              <div className="flex gap-2">
+                <Input value={wsName} onChange={(e) => setWsName(e.target.value)} />
+                <Button onClick={renameWorkspace} disabled={savingWs || !wsName.trim() || wsName === activeWs.name}>
+                  {savingWs ? "Saving…" : "Save"}
+                </Button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Slug</Label>
+              <Input value={activeWs.slug || ""} readOnly className="font-mono text-xs bg-muted/40" />
+            </div>
+
+            {/* API Keys */}
+            <div className="space-y-3 pt-2 border-t border-border">
+              <div>
+                <p className="text-sm font-medium">API Keys</p>
+                <p className="text-xs text-muted-foreground">Used by the /embed route and the VS Code extension to authenticate as this workspace.</p>
+              </div>
+              <div className="flex gap-2">
+                <Input placeholder="Key name (e.g. VS Code, Embed)" value={newKeyName} onChange={(e) => setNewKeyName(e.target.value)} />
+                <Button onClick={createApiKey} disabled={creatingKey || !newKeyName.trim()}>
+                  <Plus className="h-4 w-4 mr-1" /> Create
+                </Button>
+              </div>
+              {generatedKey && (
+                <div className="rounded-md border border-primary/40 bg-primary/5 p-3 space-y-2">
+                  <p className="text-xs font-medium">Copy this key now — it won't be shown again.</p>
+                  <div className="flex gap-2">
+                    <Input readOnly value={generatedKey} className="font-mono text-xs" />
+                    <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(generatedKey); toast({ title: "Copied" }); }}>
+                      <Copy className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                  <Button size="sm" variant="ghost" onClick={() => setGeneratedKey(null)}>Done</Button>
+                </div>
+              )}
+              <div className="space-y-2">
+                {apiKeys.length === 0 && <p className="text-xs text-muted-foreground italic">No keys yet.</p>}
+                {apiKeys.map((k) => (
+                  <div key={k.id} className="flex items-center gap-2 p-2 rounded-md border border-border bg-card/40">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{k.name}</p>
+                      <p className="text-[11px] text-muted-foreground font-mono">{k.key_prefix}…</p>
+                    </div>
+                    {k.revoked_at ? (
+                      <Badge variant="outline" className="bg-destructive/15 text-destructive border-destructive/30">Revoked</Badge>
+                    ) : (
+                      <Button size="sm" variant="ghost" onClick={() => revokeApiKey(k.id)}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Danger zone */}
+            <div className="rounded-md border border-destructive/30 bg-destructive/5 p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-destructive" />
+                <p className="text-sm font-semibold text-destructive">Danger zone</p>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Deleting <strong>{activeWs.name}</strong> permanently removes all conversations, tasks, prompts, repositories, and API keys. This cannot be undone.
+              </p>
+              <div className="space-y-2">
+                <Label className="text-xs">Type <code className="font-mono">{activeWs.name}</code> to confirm</Label>
+                <Input value={deleteConfirm} onChange={(e) => setDeleteConfirm(e.target.value)} placeholder={activeWs.name} />
+              </div>
+              <Button
+                variant="destructive"
+                size="sm"
+                disabled={deleteConfirm !== activeWs.name || deleting}
+                onClick={deleteWorkspace}
+              >
+                {deleting ? "Deleting…" : "Delete workspace"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* GitHub Personal Access Token */}
       <Card>
