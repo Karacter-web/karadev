@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.1"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -58,6 +58,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      daily_usage: {
+        Row: {
+          count: number
+          updated_at: string
+          usage_date: string
+          user_id: string
+        }
+        Insert: {
+          count?: number
+          updated_at?: string
+          usage_date?: string
+          user_id: string
+        }
+        Update: {
+          count?: number
+          updated_at?: string
+          usage_date?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       messages: {
         Row: {
@@ -345,7 +366,13 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "developer" | "viewer"
+      app_role:
+        | "admin"
+        | "developer"
+        | "viewer"
+        | "user"
+        | "moderator"
+        | "owner"
       task_status: "pending" | "in_progress" | "done"
     }
     CompositeTypes: {
@@ -474,7 +501,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "developer", "viewer"],
+      app_role: ["admin", "developer", "viewer", "user", "moderator", "owner"],
       task_status: ["pending", "in_progress", "done"],
     },
   },
