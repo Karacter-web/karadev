@@ -10,7 +10,15 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { DashboardSkeleton } from "@/components/PageSkeleton";
-import { GitBranch, MessageSquare, CheckSquare, Users, Plus, ArrowRight } from "lucide-react";
+import { GitBranch, MessageSquare, CheckSquare, Users, Plus, ArrowRight, Activity } from "lucide-react";
+
+type ActivityItem = {
+  id: string;
+  kind: "message" | "task" | "repo";
+  label: string;
+  detail: string;
+  created_at: string;
+};
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -21,9 +29,12 @@ export default function Dashboard() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ repos: 0, conversations: 0, tasks: 0, members: 0 });
+  const [activity, setActivity] = useState<ActivityItem[]>([]);
 
   useEffect(() => {
     fetchAll();
+    const interval = setInterval(fetchActivity, 60_000);
+    return () => clearInterval(interval);
   }, []);
 
   const fetchAll = async () => {
@@ -43,6 +54,54 @@ export default function Dashboard() {
       members: memberCount || 0,
     });
     setLoading(false);
+    fetchActivity();
+  };
+
+  const fetchActivity = async () => {
+    const [{ data: msgs }, { data: ts }, { data: rs }] = await Promise.all([
+      supabase
+        .from("messages")
+        .select("id, content, created_at, role, user_id, profiles:user_id(display_name)" as any)
+        .eq("role", "user")
+        .order("created_at", { ascending: false })
+        .limit(20),
+      supabase
+        .from("tasks")
+        .select("id, title, created_at, created_by, profiles:created_by(display_name)" as any)
+        .order("created_at", { ascending: false })
+        .limit(20),
+      supabase
+        .from("repositories")
+        .select("id, github_repo_full_name, connected_at")
+        .order("connected_at", { ascending: false })
+        .limit(20),
+    ]);
+
+    const items: ActivityItem[] = [];
+    (msgs || []).forEach((m: any) => items.push({
+      id: `m-${m.id}`,
+      kind: "message",
+      label: `${m.profiles?.display_name || "Someone"} asked Karacter`,
+      detail: (m.content || "").slice(0, 120),
+      created_at: m.created_at,
+    }));
+    (ts || []).forEach((t: any) => items.push({
+      id: `t-${t.id}`,
+      kind: "task",
+      label: `${t.profiles?.display_name || "Someone"} created task`,
+      detail: t.title,
+      created_at: t.created_at,
+    }));
+    (rs || []).forEach((r: any) => items.push({
+      id: `r-${r.id}`,
+      kind: "repo",
+      label: "Repository connected",
+      detail: r.github_repo_full_name,
+      created_at: r.connected_at,
+    }));
+
+    items.sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at));
+    setActivity(items.slice(0, 20));
   };
 
   const createWorkspace = async () => {
@@ -143,6 +202,42 @@ export default function Dashboard() {
               </Card>
             ))}
           </div>
+        )}
+      </div>
+
+      {/* Team Activity Feed */}
+      <div>
+        <h2 className="text-xl font-display font-semibold mb-4 flex items-center gap-2">
+          <Activity className="h-5 w-5 text-primary" /> Team Activity
+        </h2>
+        {activity.length === 0 ? (
+          <Card className="border-dashed">
+            <CardContent className="p-6 text-center text-sm text-muted-foreground">
+              No recent activity yet.
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <CardContent className="p-0 divide-y divide-border">
+              {activity.map((a) => {
+                const Icon = a.kind === "message" ? MessageSquare : a.kind === "task" ? CheckSquare : GitBranch;
+                return (
+                  <div key={a.id} className="flex items-start gap-3 p-3 sm:p-4">
+                    <div className="h-8 w-8 rounded-md bg-muted flex items-center justify-center shrink-0">
+                      <Icon className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{a.label}</p>
+                      <p className="text-xs text-muted-foreground truncate">{a.detail}</p>
+                    </div>
+                    <span className="text-[11px] text-muted-foreground shrink-0">
+                      {new Date(a.created_at).toLocaleString()}
+                    </span>
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>
