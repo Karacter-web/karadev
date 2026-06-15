@@ -61,13 +61,13 @@ export default function Dashboard() {
     const [{ data: msgs }, { data: ts }, { data: rs }] = await Promise.all([
       supabase
         .from("messages")
-        .select("id, content, created_at, role, user_id, profiles:user_id(display_name)" as any)
+        .select("id, content, created_at, role, user_id")
         .eq("role", "user")
         .order("created_at", { ascending: false })
         .limit(20),
       supabase
         .from("tasks")
-        .select("id, title, created_at, created_by, profiles:created_by(display_name)" as any)
+        .select("id, title, created_at, created_by")
         .order("created_at", { ascending: false })
         .limit(20),
       supabase
@@ -77,18 +77,32 @@ export default function Dashboard() {
         .limit(20),
     ]);
 
+    // Resolve display names for the users involved
+    const userIds = Array.from(new Set([
+      ...(msgs || []).map((m: any) => m.user_id).filter(Boolean),
+      ...(ts || []).map((t: any) => t.created_by).filter(Boolean),
+    ])) as string[];
+    const nameMap = new Map<string, string>();
+    if (userIds.length) {
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("user_id, display_name")
+        .in("user_id", userIds);
+      (profs || []).forEach((p: any) => nameMap.set(p.user_id, p.display_name || "Someone"));
+    }
+
     const items: ActivityItem[] = [];
     (msgs || []).forEach((m: any) => items.push({
       id: `m-${m.id}`,
       kind: "message",
-      label: `${m.profiles?.display_name || "Someone"} asked Karacter`,
+      label: `${nameMap.get(m.user_id) || "Someone"} asked Karacter`,
       detail: (m.content || "").slice(0, 120),
       created_at: m.created_at,
     }));
     (ts || []).forEach((t: any) => items.push({
       id: `t-${t.id}`,
       kind: "task",
-      label: `${t.profiles?.display_name || "Someone"} created task`,
+      label: `${nameMap.get(t.created_by) || "Someone"} created task`,
       detail: t.title,
       created_at: t.created_at,
     }));
