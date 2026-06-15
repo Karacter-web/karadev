@@ -12,7 +12,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { Plus, Star, Search, FileText, Bot, Calendar } from "lucide-react";
-import { format } from "date-fns";
+
+const fmtDate = (d: string) =>
+  new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 
 const AGENT_SOURCES = ["lovable", "cursor", "windsurf", "copilot", "other"] as const;
 type AgentSource = typeof AGENT_SOURCES[number];
@@ -220,7 +222,7 @@ export default function AuditLogs() {
                       )}
                       <span className="text-xs text-muted-foreground flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
-                        {format(new Date(log.created_at), "MMM d, yyyy")}
+                        {fmtDate(log.created_at)}
                       </span>
                     </div>
                   </div>
