@@ -161,7 +161,7 @@ serve(async (req) => {
       const thinkResp = await fetch(LOVABLE_AI_URL, {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "Lovable-API-Key": LOVABLE_API_KEY,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
@@ -214,7 +214,7 @@ Be brief. This analysis is internal and will NOT be shown to the user.`,
     const response = await fetch(LOVABLE_AI_URL, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Lovable-API-Key": LOVABLE_API_KEY,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
