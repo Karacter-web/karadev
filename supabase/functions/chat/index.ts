@@ -1,21 +1,21 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 
-// --- OpenRouter config ---
-// Free-tier model used as the primary provider while this tool is in
-// developer-only mode. Swap via env var without redeploying logic changes.
-const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+// --- Lovable AI Gateway config ---
+// Temporarily routed through Lovable AI (Gemini Flash) — no per-user
+// OpenRouter key needed; billing flows through the workspace's LOVABLE_API_KEY.
+const LOVABLE_AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const PRIMARY_MODEL =
-  Deno.env.get("OPENROUTER_MODEL") || "qwen/qwen3-coder:free";
+  Deno.env.get("LOVABLE_AI_MODEL") || "google/gemini-2.5-flash";
 const THINK_MODEL =
-  Deno.env.get("OPENROUTER_THINK_MODEL") || "qwen/qwen3-coder:free";
+  Deno.env.get("LOVABLE_AI_THINK_MODEL") || "google/gemini-2.5-flash";
 
 // Daily request cap per user while running on free-tier models.
 const DAILY_LIMIT = Number(Deno.env.get("DAILY_MESSAGE_LIMIT") || "30");
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+    "authorization, x-client-info, apikey, content-type, x-api-key, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 // Lightweight persona for the edge function — the full capability reference
@@ -67,25 +67,63 @@ serve(async (req) => {
 
   try {
     const { messages, think, repoContext } = await req.json();
-    const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
-    if (!OPENROUTER_API_KEY) throw new Error("OPENROUTER_API_KEY is not configured");
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    // --- Daily usage limit (free-tier protection) ---
+    // --- Auth: accept either a Supabase user JWT OR a workspace API key (x-api-key) ---
+    // The API key path lets external apps / scripts integrate without a user session.
     const authHeader = req.headers.get("Authorization") || "";
     const jwt = authHeader.replace("Bearer ", "");
+    const apiKeyHeader = req.headers.get("x-api-key") || "";
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     let userId: string | null = null;
-    try {
-      const { data } = await supabaseAdmin.auth.getUser(jwt);
-      userId = data?.user?.id ?? null;
-    } catch {
-      // anon key or invalid token — treat as unauthenticated, no per-user limit
+    let viaApiKey = false;
+
+    if (apiKeyHeader && apiKeyHeader.startsWith("kdv_")) {
+      // Hash & look up the workspace API key. Valid key = authenticated, daily limit bypassed.
+      const buf = await crypto.subtle.digest(
+        "SHA-256",
+        new TextEncoder().encode(apiKeyHeader),
+      );
+      const keyHash = Array.from(new Uint8Array(buf))
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
+      const { data: keyRow } = await supabaseAdmin
+        .from("api_keys")
+        .select("id, workspace_id, revoked_at, expires_at, created_by")
+        .eq("key_hash", keyHash)
+        .maybeSingle();
+
+      const now = new Date();
+      const revoked = keyRow?.revoked_at && new Date(keyRow.revoked_at) <= now;
+      const expired = keyRow?.expires_at && new Date(keyRow.expires_at) <= now;
+      if (!keyRow || revoked || expired) {
+        return new Response(
+          JSON.stringify({ error: "Invalid or revoked API key." }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+      viaApiKey = true;
+      userId = keyRow.created_by ?? null;
+      // Best-effort: record usage timestamp
+      await supabaseAdmin
+        .from("api_keys")
+        .update({ last_used_at: now.toISOString() })
+        .eq("id", keyRow.id);
+    } else if (jwt) {
+      try {
+        const { data } = await supabaseAdmin.auth.getUser(jwt);
+        userId = data?.user?.id ?? null;
+      } catch {
+        // invalid token — fall through as unauthenticated
+      }
     }
 
-    if (userId) {
+    // Daily limit only applies to user-JWT sessions (API key integrations bypass it).
+    if (userId && !viaApiKey) {
       const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
       const { data: usage } = await supabaseAdmin
         .from("daily_usage")
@@ -120,13 +158,11 @@ serve(async (req) => {
     // internally, then use that analysis to produce a better final answer.
     let thinkingContext = "";
     if (think) {
-      const thinkResp = await fetch(OPENROUTER_URL, {
+      const thinkResp = await fetch(LOVABLE_AI_URL, {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+            "Lovable-API-Key": LOVABLE_API_KEY,
             "Content-Type": "application/json",
-            "HTTP-Referer": "https://dev.karacterhub.xyz",
-            "X-Title": "Karadev",
           },
           body: JSON.stringify({
             model: THINK_MODEL,
@@ -175,13 +211,11 @@ Be brief. This analysis is internal and will NOT be shown to the user.`,
       });
     }
 
-    const response = await fetch(OPENROUTER_URL, {
+    const response = await fetch(LOVABLE_AI_URL, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+          "Lovable-API-Key": LOVABLE_API_KEY,
           "Content-Type": "application/json",
-          "HTTP-Referer": "https://dev.karacterhub.xyz",
-          "X-Title": "Karadev",
         },
         body: JSON.stringify({
           model: PRIMARY_MODEL,
