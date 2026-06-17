@@ -127,6 +127,99 @@ export type Database = {
           },
         ]
       }
+      bridge_jobs: {
+        Row: {
+          agent: string
+          completed_at: string | null
+          created_at: string
+          duration_ms: number | null
+          exit_code: number | null
+          id: string
+          input: Json
+          picked_up_at: string | null
+          reason: string | null
+          status: string
+          stderr: string | null
+          stdout: string | null
+          thread_id: string | null
+          tool: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          agent: string
+          completed_at?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          exit_code?: number | null
+          id?: string
+          input: Json
+          picked_up_at?: string | null
+          reason?: string | null
+          status?: string
+          stderr?: string | null
+          stdout?: string | null
+          thread_id?: string | null
+          tool: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          agent?: string
+          completed_at?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          exit_code?: number | null
+          id?: string
+          input?: Json
+          picked_up_at?: string | null
+          reason?: string | null
+          status?: string
+          stderr?: string | null
+          stdout?: string | null
+          thread_id?: string | null
+          tool?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      bridge_tokens: {
+        Row: {
+          created_at: string
+          hostname: string | null
+          id: string
+          last_used_at: string | null
+          name: string
+          revoked_at: string | null
+          token_hash: string
+          token_prefix: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          hostname?: string | null
+          id?: string
+          last_used_at?: string | null
+          name: string
+          revoked_at?: string | null
+          token_hash: string
+          token_prefix: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          hostname?: string | null
+          id?: string
+          last_used_at?: string | null
+          name?: string
+          revoked_at?: string | null
+          token_hash?: string
+          token_prefix?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       conversations: {
         Row: {
           created_at: string
