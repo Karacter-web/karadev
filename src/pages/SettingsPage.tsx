@@ -350,6 +350,107 @@ export default function SettingsPage() {
         </Card>
       )}
 
+      {/* API Integration — developer docs for using workspace API keys */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Terminal className="h-5 w-5 text-muted-foreground" />
+            <div>
+              <CardTitle>API Integration</CardTitle>
+              <CardDescription>
+                Integrate Karadev's AI chat into your own project. A workspace API key
+                authenticates the request and <strong>bypasses</strong> the per-user daily limit
+                and JWT requirement — no user session needed.
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-1.5">
+            <Label className="text-xs uppercase tracking-wider text-muted-foreground">Endpoint</Label>
+            <div className="flex gap-2">
+              <Input
+                readOnly
+                value={`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`}
+                className="font-mono text-xs"
+              />
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  navigator.clipboard.writeText(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`);
+                  toast({ title: "Endpoint copied" });
+                }}
+              >
+                <Copy className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs uppercase tracking-wider text-muted-foreground">Headers</Label>
+            <pre className="text-[11px] font-mono bg-muted/60 border border-border rounded-md p-3 overflow-x-auto">
+{`Content-Type: application/json
+x-api-key: kdv_••••••••••••••••   ← your workspace API key`}
+            </pre>
+            <p className="text-[11px] text-muted-foreground">
+              Generate a key above. Send it as <code className="font-mono bg-muted px-1 rounded">x-api-key</code>;
+              the server hashes &amp; matches it, then accepts the request without a Supabase JWT.
+            </p>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs uppercase tracking-wider text-muted-foreground">cURL example</Label>
+            <div className="relative">
+              <pre className="text-[11px] font-mono bg-muted/60 border border-border rounded-md p-3 overflow-x-auto">
+{`curl -N ${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat \\
+  -H "Content-Type: application/json" \\
+  -H "x-api-key: kdv_YOUR_KEY_HERE" \\
+  -d '{
+    "messages": [
+      { "role": "user", "content": "Explain async/await in TypeScript" }
+    ]
+  }'`}
+              </pre>
+              <Button
+                size="sm"
+                variant="outline"
+                className="absolute top-2 right-2"
+                onClick={() => {
+                  const snippet = `curl -N ${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat \\\n  -H "Content-Type: application/json" \\\n  -H "x-api-key: kdv_YOUR_KEY_HERE" \\\n  -d '{\n    "messages": [\n      { "role": "user", "content": "Explain async/await in TypeScript" }\n    ]\n  }'`;
+                  navigator.clipboard.writeText(snippet);
+                  toast({ title: "cURL copied" });
+                }}
+              >
+                <Copy className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs uppercase tracking-wider text-muted-foreground">JavaScript / fetch</Label>
+            <pre className="text-[11px] font-mono bg-muted/60 border border-border rounded-md p-3 overflow-x-auto">
+{`const res = await fetch("${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "x-api-key": process.env.KARADEV_API_KEY!,
+  },
+  body: JSON.stringify({
+    messages: [{ role: "user", content: "Hello" }],
+  }),
+});
+// Response is an SSE stream (text/event-stream) — read with res.body.getReader()`}
+            </pre>
+          </div>
+
+          <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-3 text-[11px] text-amber-300/90 space-y-1">
+            <p className="font-medium flex items-center gap-1.5"><AlertTriangle className="h-3.5 w-3.5" /> Keep keys server-side</p>
+            <p>Never embed an API key in browser JavaScript or commit it to git. Use environment variables in your backend / edge function and call the endpoint from there.</p>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* GitHub Personal Access Token */}
       <Card>
         <CardHeader>
