@@ -386,6 +386,27 @@ export type Database = {
           },
         ]
       }
+      rate_limit_buckets: {
+        Row: {
+          count: number
+          key: string
+          updated_at: string
+          window_start: string
+        }
+        Insert: {
+          count?: number
+          key: string
+          updated_at?: string
+          window_start?: string
+        }
+        Update: {
+          count?: number
+          key?: string
+          updated_at?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       repositories: {
         Row: {
           connected_at: string
@@ -567,6 +588,14 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_rate_limit: {
+        Args: { _key: string; _limit: number; _window_ms: number }
+        Returns: {
+          allowed: boolean
+          remaining: number
+          reset_at: string
+        }[]
       }
       is_workspace_admin: {
         Args: { _user_id: string; _workspace_id: string }
