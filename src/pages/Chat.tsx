@@ -6,9 +6,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import ReactMarkdown from "react-markdown";
-import { Send, Bot, User, Loader2, Sparkles, Brain, Plus, MessageSquare, Trash2, Search, Download, X, GitBranch } from "lucide-react";
+import { Send, Bot, User, Loader2, Sparkles, Brain, Plus, MessageSquare, Trash2, Search, Download, X, GitBranch, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { fetchRepoTree, hasGitHubToken } from "@/lib/github-token";
+import { fetchRepoSnapshot, hasGitHubToken } from "@/lib/github-token";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -38,6 +45,8 @@ export default function Chat() {
   const [isSearching, setIsSearching] = useState(false);
   const [repoContext, setRepoContext] = useState<string | null>(null);
   const [connectedRepos, setConnectedRepos] = useState<{ full_name: string; branch: string }[]>([]);
+  const [activeRepo, setActiveRepo] = useState<string | null>(null);
+  const [syncingRepo, setSyncingRepo] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -57,7 +66,7 @@ export default function Chat() {
       });
   }, [workspaceId, user]);
 
-  // Fetch connected repos & build file tree context for AI
+  // Fetch connected repos for the workspace
   useEffect(() => {
     if (!effectiveWsId) return;
     (async () => {
@@ -67,24 +76,45 @@ export default function Chat() {
         .eq("workspace_id", effectiveWsId);
       if (!repos?.length) {
         setConnectedRepos([]);
+        setActiveRepo(null);
         setRepoContext(null);
         return;
       }
-      setConnectedRepos(repos.map(r => ({ full_name: r.github_repo_full_name, branch: r.default_branch || "main" })));
-      
-      if (!hasGitHubToken()) {
-        setRepoContext(`Connected repos: ${repos.map(r => r.github_repo_full_name).join(", ")} (no GitHub token configured — file tree unavailable)`);
-        return;
-      }
-      // Fetch first repo's tree for context
-      const tree = await fetchRepoTree(repos[0].github_repo_full_name, repos[0].default_branch || "main");
-      if (tree) {
-        setRepoContext(`## Connected Repository: ${repos[0].github_repo_full_name}\n\n### File Tree\n\`\`\`\n${tree}\n\`\`\``);
-      } else {
-        setRepoContext(`Connected repos: ${repos.map(r => r.github_repo_full_name).join(", ")}`);
-      }
+      const mapped = repos.map((r) => ({
+        full_name: r.github_repo_full_name,
+        branch: r.default_branch || "main",
+      }));
+      setConnectedRepos(mapped);
+      // Default to first repo if none selected yet
+      setActiveRepo((prev) => prev ?? mapped[0].full_name);
     })();
   }, [effectiveWsId]);
+
+  // Sync (fetch tree + manifests + README) for the currently selected repo
+  const syncRepoContext = useCallback(async () => {
+    if (!activeRepo) return;
+    const repo = connectedRepos.find((r) => r.full_name === activeRepo);
+    if (!repo) return;
+    if (!hasGitHubToken()) {
+      setRepoContext(
+        `Connected repos: ${connectedRepos
+          .map((r) => r.full_name)
+          .join(", ")} (no GitHub token configured — add a PAT in Repos to enable deep sync)`
+      );
+      return;
+    }
+    setSyncingRepo(true);
+    const snap = await fetchRepoSnapshot(repo.full_name, repo.branch);
+    setRepoContext(
+      snap ?? `Connected repo: ${repo.full_name} (sync failed — check token/permissions)`
+    );
+    setSyncingRepo(false);
+  }, [activeRepo, connectedRepos]);
+
+  // Auto-sync whenever the active repo changes
+  useEffect(() => {
+    syncRepoContext();
+  }, [syncRepoContext]);
 
   // Fetch conversations for workspace
   const fetchConversations = useCallback(async () => {
@@ -392,12 +422,37 @@ export default function Chat() {
               <h1 className="font-display font-semibold text-sm sm:text-base truncate">DevAgent</h1>
               <p className="text-xs text-muted-foreground hidden sm:block">
                 {connectedRepos.length > 0
-                  ? <span className="flex items-center gap-1"><GitBranch className="h-3 w-3 text-primary inline" /> Synced with {connectedRepos[0].full_name}</span>
+                  ? <span className="flex items-center gap-1"><GitBranch className="h-3 w-3 text-primary inline" /> {syncingRepo ? "Syncing…" : `Synced with ${activeRepo}`}</span>
                   : "Context-aware AI development assistant"}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {connectedRepos.length > 0 && (
+              <>
+                <Select value={activeRepo ?? undefined} onValueChange={setActiveRepo}>
+                  <SelectTrigger className="h-8 w-[160px] sm:w-[220px] text-xs">
+                    <SelectValue placeholder="Select repo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {connectedRepos.map((r) => (
+                      <SelectItem key={r.full_name} value={r.full_name} className="text-xs">
+                        {r.full_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={syncRepoContext}
+                  disabled={syncingRepo}
+                  title="Re-sync repo context"
+                >
+                  <RefreshCw className={cn("h-4 w-4", syncingRepo && "animate-spin")} />
+                </Button>
+              </>
+            )}
             {/* Export button */}
             {messages.length > 0 && (
               <Button variant="ghost" size="sm" onClick={exportConversation} title="Export as Markdown">
