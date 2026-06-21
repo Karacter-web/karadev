@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 
 const Landing = lazy(() => import("./pages/Index"));
 const Auth = lazy(() => import("./pages/Auth"));
@@ -24,6 +25,12 @@ const Terms = lazy(() => import("./pages/Terms"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Embed = lazy(() => import("./pages/Embed"));
 const DashboardLayout = lazy(() => import("./components/DashboardLayout"));
+const AdminLayout = lazy(() => import("./components/AdminLayout"));
+const AdminOverview = lazy(() => import("./pages/admin/AdminOverview"));
+const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
+const AdminWorkspaces = lazy(() => import("./pages/admin/AdminWorkspaces"));
+const AdminPrompts = lazy(() => import("./pages/admin/AdminPrompts"));
+const AdminAudit = lazy(() => import("./pages/admin/AdminAudit"));
 
 const queryClient = new QueryClient();
 
@@ -48,9 +55,24 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function PublicRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
+  const { isAdmin, loading: roleLoading } = useIsAdmin();
   if (loading) return null;
-  if (user) return <Navigate to="/dashboard" replace />;
+  if (user) {
+    if (roleLoading) return null;
+    return <Navigate to={isAdmin ? "/admin" : "/dashboard"} replace />;
+  }
   return <>{children}</>;
+}
+
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  if (loading) return <PageLoader />;
+  if (!user) return <Navigate to="/auth" replace />;
+  return (
+    <Suspense fallback={<PageLoader />}>
+      <AdminLayout>{children}</AdminLayout>
+    </Suspense>
+  );
 }
 
 const App = () => (
@@ -77,6 +99,12 @@ const App = () => (
                 <Route path="/dashboard/prompts" element={<ProtectedRoute><ErrorBoundary fallbackTitle="Prompts Error"><Prompts /></ErrorBoundary></ProtectedRoute>} />
                 <Route path="/dashboard/settings" element={<ProtectedRoute><ErrorBoundary fallbackTitle="Settings Error"><SettingsPage /></ErrorBoundary></ProtectedRoute>} />
                 <Route path="/dashboard/audit-logs" element={<ProtectedRoute><ErrorBoundary fallbackTitle="Audit Logs Error"><AuditLogs /></ErrorBoundary></ProtectedRoute>} />
+
+                <Route path="/admin" element={<AdminRoute><ErrorBoundary fallbackTitle="Admin Error"><AdminOverview /></ErrorBoundary></AdminRoute>} />
+                <Route path="/admin/users" element={<AdminRoute><ErrorBoundary fallbackTitle="Admin Error"><AdminUsers /></ErrorBoundary></AdminRoute>} />
+                <Route path="/admin/workspaces" element={<AdminRoute><ErrorBoundary fallbackTitle="Admin Error"><AdminWorkspaces /></ErrorBoundary></AdminRoute>} />
+                <Route path="/admin/prompts" element={<AdminRoute><ErrorBoundary fallbackTitle="Admin Error"><AdminPrompts /></ErrorBoundary></AdminRoute>} />
+                <Route path="/admin/audit" element={<AdminRoute><ErrorBoundary fallbackTitle="Admin Error"><AdminAudit /></ErrorBoundary></AdminRoute>} />
 
                 <Route path="/terms" element={<Terms />} />
                 <Route path="/privacy" element={<Privacy />} />
