@@ -82,7 +82,18 @@ export default function Auth() {
         setPassword("");
       } else {
         await signIn(email, password);
-        navigate("/dashboard");
+        const { data: { user: signedInUser } } = await supabase.auth.getUser();
+        let dest = "/dashboard";
+        if (signedInUser) {
+          const { data: roleRow } = await supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", signedInUser.id)
+            .eq("role", "admin")
+            .maybeSingle();
+          if (roleRow) dest = "/admin";
+        }
+        navigate(dest);
       }
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
