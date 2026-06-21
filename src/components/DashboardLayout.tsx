@@ -1,12 +1,13 @@
 import { ReactNode, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Bot, MessageSquare, GitBranch, CheckSquare, BookTemplate,
   Settings, LogOut, ChevronLeft, ChevronRight, Users, LayoutDashboard,
-  Menu, X, ClipboardList,
+  Menu, X, ClipboardList, Shield,
 } from "lucide-react";
 
 const navItems = [
@@ -24,6 +25,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { signOut } = useAuth();
+  const { isAdmin } = useIsAdmin();
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useIsMobile();
@@ -74,6 +76,15 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
       {/* Bottom */}
       <div className="p-2 border-t border-sidebar-border space-y-1 shrink-0">
+        {isAdmin && (
+          <button
+            onClick={() => handleNav("/admin")}
+            className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm text-sidebar-foreground/90 bg-destructive/10 hover:bg-destructive/20 hover:text-destructive transition-colors"
+          >
+            <Shield className="h-4 w-4 shrink-0" />
+            {(!collapsed || isMobile) && <span>Admin Panel</span>}
+          </button>
+        )}
         {!isMobile && (
           <button
             onClick={() => setCollapsed(!collapsed)}

@@ -24,9 +24,18 @@ export default function AuthCallback() {
         if (error) throw error;
 
         if (data?.session) {
-          // If a redirect path is provided (like /reset-password), use it. Otherwise, head to dashboard
-          const nextRoute = searchParams.get("next") || "/dashboard";
-          navigate(nextRoute, { replace: true });
+          const nextRoute = searchParams.get("next");
+          if (nextRoute) {
+            navigate(nextRoute, { replace: true });
+          } else {
+            const { data: roleRow } = await supabase
+              .from("user_roles")
+              .select("role")
+              .eq("user_id", data.session.user.id)
+              .eq("role", "admin")
+              .maybeSingle();
+            navigate(roleRow ? "/admin" : "/dashboard", { replace: true });
+          }
         } else {
           // If no session is active yet, wait a moment for the implicit token flow to catch up
           const { data: listenerData } = await supabase.auth.onAuthStateChange((event, session) => {
