@@ -499,6 +499,45 @@ export type Database = {
           },
         ]
       }
+      user_connectors: {
+        Row: {
+          capabilities: string[]
+          created_at: string
+          credentials: Json
+          id: string
+          last_checked_at: string | null
+          last_error: string | null
+          provider: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          capabilities?: string[]
+          created_at?: string
+          credentials?: Json
+          id?: string
+          last_checked_at?: string | null
+          last_error?: string | null
+          provider: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          capabilities?: string[]
+          created_at?: string
+          credentials?: Json
+          id?: string
+          last_checked_at?: string | null
+          last_error?: string | null
+          provider?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
