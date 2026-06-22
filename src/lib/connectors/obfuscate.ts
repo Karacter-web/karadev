@@ -8,14 +8,12 @@ export function obfuscate(value: string): string {
   if (!value) return value;
   if (value.startsWith(PREFIX)) return value;
   const reversed = value.split("").reverse().join("");
-  const b64 = typeof btoa !== "undefined" ? btoa(reversed) : Buffer.from(reversed, "utf-8").toString("base64");
-  return PREFIX + b64;
+  return PREFIX + btoa(reversed);
 }
 
 export function deobfuscate(value: string): string {
   if (!value) return value;
   if (!value.startsWith(PREFIX)) return value;
-  const b64 = value.slice(PREFIX.length);
-  const decoded = typeof atob !== "undefined" ? atob(b64) : Buffer.from(b64, "base64").toString("utf-8");
+  const decoded = atob(value.slice(PREFIX.length));
   return decoded.split("").reverse().join("");
 }
