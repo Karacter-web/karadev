@@ -37,6 +37,7 @@ const statusColors: Record<Integration["status"], string> = {
 };
 
 import { getGitHubToken, setGitHubToken, hasGitHubToken } from "@/lib/github-token";
+import ConnectorsSection from "@/components/ConnectorsSection";
 
 export default function SettingsPage() {
   const { user } = useAuth();
