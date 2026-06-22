@@ -37,6 +37,7 @@ const statusColors: Record<Integration["status"], string> = {
 };
 
 import { getGitHubToken, setGitHubToken, hasGitHubToken } from "@/lib/github-token";
+import ConnectorsSection from "@/components/ConnectorsSection";
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -349,6 +350,9 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Connectors — per-user provider integrations (GitHub, Supabase, Vercel, Netlify, Google, Lovable) */}
+      {user && <ConnectorsSection userId={user.id} />}
 
       {/* API Integration — developer docs for using workspace API keys */}
       <Card>
