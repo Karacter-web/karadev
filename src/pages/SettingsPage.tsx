@@ -351,6 +351,9 @@ export default function SettingsPage() {
         </Card>
       )}
 
+      {/* Connectors — per-user provider integrations (GitHub, Supabase, Vercel, Netlify, Google, Lovable) */}
+      {user && <ConnectorsSection userId={user.id} />}
+
       {/* API Integration — developer docs for using workspace API keys */}
       <Card>
         <CardHeader>
