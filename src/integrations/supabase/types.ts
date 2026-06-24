@@ -286,6 +286,63 @@ export type Database = {
         }
         Relationships: []
       }
+      generated_projects: {
+        Row: {
+          admin_user_id: string
+          analysis: string | null
+          analysis_model: string | null
+          created_at: string
+          error: string | null
+          files_count: number
+          github_repo_name: string | null
+          github_repo_url: string | null
+          id: string
+          logs: Json
+          prompt: string
+          scaffold_model: string | null
+          source_url: string | null
+          stage: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_user_id: string
+          analysis?: string | null
+          analysis_model?: string | null
+          created_at?: string
+          error?: string | null
+          files_count?: number
+          github_repo_name?: string | null
+          github_repo_url?: string | null
+          id?: string
+          logs?: Json
+          prompt: string
+          scaffold_model?: string | null
+          source_url?: string | null
+          stage?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_user_id?: string
+          analysis?: string | null
+          analysis_model?: string | null
+          created_at?: string
+          error?: string | null
+          files_count?: number
+          github_repo_name?: string | null
+          github_repo_url?: string | null
+          id?: string
+          logs?: Json
+          prompt?: string
+          scaffold_model?: string | null
+          source_url?: string | null
+          stage?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string
