@@ -538,6 +538,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_provider_keys: {
+        Row: {
+          auth_tag: string
+          ciphertext: string
+          created_at: string
+          id: string
+          iv: string
+          key_last4: string
+          provider: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          auth_tag: string
+          ciphertext: string
+          created_at?: string
+          id?: string
+          iv: string
+          key_last4: string
+          provider: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          auth_tag?: string
+          ciphertext?: string
+          created_at?: string
+          id?: string
+          iv?: string
+          key_last4?: string
+          provider?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
