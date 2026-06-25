@@ -127,6 +127,75 @@ export type Database = {
           },
         ]
       }
+      audit_scans: {
+        Row: {
+          admin_user_id: string
+          completed_at: string | null
+          created_at: string
+          critical_count: number
+          error: string | null
+          id: string
+          issues_count: number
+          report: Json | null
+          status: string
+          target: string
+          trigger_method: string
+        }
+        Insert: {
+          admin_user_id: string
+          completed_at?: string | null
+          created_at?: string
+          critical_count?: number
+          error?: string | null
+          id?: string
+          issues_count?: number
+          report?: Json | null
+          status?: string
+          target?: string
+          trigger_method?: string
+        }
+        Update: {
+          admin_user_id?: string
+          completed_at?: string | null
+          created_at?: string
+          critical_count?: number
+          error?: string | null
+          id?: string
+          issues_count?: number
+          report?: Json | null
+          status?: string
+          target?: string
+          trigger_method?: string
+        }
+        Relationships: []
+      }
+      audit_settings: {
+        Row: {
+          alert_threshold_critical: number
+          enabled: boolean
+          id: number
+          rate_limit_per_24h: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          alert_threshold_critical?: number
+          enabled?: boolean
+          id?: number
+          rate_limit_per_24h?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          alert_threshold_critical?: number
+          enabled?: boolean
+          id?: number
+          rate_limit_per_24h?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       bridge_jobs: {
         Row: {
           agent: string
