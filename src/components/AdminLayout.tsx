@@ -2,16 +2,17 @@ import { ReactNode } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
-import { Shield, Users, Building2, ClipboardList, BookTemplate, LayoutDashboard, LogOut, ArrowLeft, Bot } from "lucide-react";
+import { Shield, Users, Building2, BookTemplate, LayoutDashboard, LogOut, ArrowLeft, Bot, ShieldAlert, Settings2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const items = [
   { to: "/admin", label: "Overview", icon: LayoutDashboard, end: true },
   { to: "/admin/agent", label: "Build Agent", icon: Bot },
+  { to: "/admin/audit", label: "Audit Scans", icon: ShieldAlert },
   { to: "/admin/users", label: "Users", icon: Users },
   { to: "/admin/workspaces", label: "Workspaces", icon: Building2 },
   { to: "/admin/prompts", label: "Prompt Library", icon: BookTemplate },
-  { to: "/admin/audit", label: "Audit Logs", icon: ClipboardList },
+  { to: "/admin/settings/audit", label: "Audit Settings", icon: Settings2 },
 ];
 
 export default function AdminLayout({ children }: { children: ReactNode }) {

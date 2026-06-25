@@ -32,6 +32,7 @@ const AdminWorkspaces = lazy(() => import("./pages/admin/AdminWorkspaces"));
 const AdminPrompts = lazy(() => import("./pages/admin/AdminPrompts"));
 const AdminAudit = lazy(() => import("./pages/admin/AdminAudit"));
 const AdminAgent = lazy(() => import("./pages/admin/AdminAgent"));
+const AdminAuditSettings = lazy(() => import("./pages/admin/AdminAuditSettings"));
 
 const queryClient = new QueryClient();
 
@@ -107,6 +108,7 @@ const App = () => (
                 <Route path="/admin/prompts" element={<AdminRoute><ErrorBoundary fallbackTitle="Admin Error"><AdminPrompts /></ErrorBoundary></AdminRoute>} />
                 <Route path="/admin/audit" element={<AdminRoute><ErrorBoundary fallbackTitle="Admin Error"><AdminAudit /></ErrorBoundary></AdminRoute>} />
                 <Route path="/admin/agent" element={<AdminRoute><ErrorBoundary fallbackTitle="Admin Error"><AdminAgent /></ErrorBoundary></AdminRoute>} />
+                <Route path="/admin/settings/audit" element={<AdminRoute><ErrorBoundary fallbackTitle="Admin Error"><AdminAuditSettings /></ErrorBoundary></AdminRoute>} />
 
                 <Route path="/terms" element={<Terms />} />
                 <Route path="/privacy" element={<Privacy />} />

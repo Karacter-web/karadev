@@ -4,7 +4,9 @@ import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const HF_TOKEN = Deno.env.get('HUGGINGFACE_TOKEN');
-const MISTRAL_MODEL = 'mistralai/Mistral-7B-Instruct-v0.3';
+const OPENROUTER_KEY = Deno.env.get('OPENROUTER_API_KEY');
+// HF serverless inference for v0.3 is gated/removed; route Mistral through OpenRouter (reliable).
+const MISTRAL_MODEL = 'mistralai/mistral-7b-instruct';
 
 function parseGitHubUrl(url: string): { owner: string; repo: string } | null {
   try {
@@ -37,24 +39,55 @@ async function fetchRepoSnapshot(url: string): Promise<string> {
   return `# Repo: ${owner}/${repo}\nDescription: ${meta?.description ?? ''}\nLanguage: ${meta?.language ?? ''}\nStars: ${meta?.stargazers_count ?? 0}\n\n## README (truncated)\n${readme.slice(0, 4000)}\n\n## package.json\n${pkg.slice(0, 2000)}\n\n## File tree (first 200)\n${files}`;
 }
 
-async function callMistral(prompt: string): Promise<string> {
-  if (!HF_TOKEN) throw new Error('HUGGINGFACE_TOKEN not set');
-  const r = await fetch(`https://api-inference.huggingface.co/models/${MISTRAL_MODEL}/v1/chat/completions`, {
+const SYSTEM = 'You are a senior software architect. Analyze the user request and any provided source material, then produce a concise technical plan: chosen stack, file structure, key dependencies, and step-by-step build order. Be specific and decisive.';
+
+async function callOpenRouter(prompt: string): Promise<string> {
+  if (!OPENROUTER_KEY) throw new Error('OPENROUTER_API_KEY not set');
+  const r = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
-    headers: { 'Authorization': `Bearer ${HF_TOKEN}`, 'Content-Type': 'application/json' },
+    headers: {
+      'Authorization': `Bearer ${OPENROUTER_KEY}`,
+      'Content-Type': 'application/json',
+      'HTTP-Referer': 'https://karadev.app',
+      'X-Title': 'Karadev Build Agent',
+    },
     body: JSON.stringify({
       model: MISTRAL_MODEL,
-      messages: [
-        { role: 'system', content: 'You are a senior software architect. Analyze the user request and any provided source material, then produce a concise technical plan: chosen stack, file structure, key dependencies, and step-by-step build order. Be specific and decisive.' },
-        { role: 'user', content: prompt },
-      ],
+      messages: [{ role: 'system', content: SYSTEM }, { role: 'user', content: prompt }],
       max_tokens: 1500,
       temperature: 0.3,
     }),
   });
-  if (!r.ok) throw new Error(`Mistral/HF ${r.status}: ${await r.text()}`);
+  if (!r.ok) throw new Error(`OpenRouter ${r.status}: ${await r.text()}`);
   const j = await r.json();
   return j.choices?.[0]?.message?.content ?? '';
+}
+
+async function callHFRouter(prompt: string): Promise<string> {
+  // Optional fallback via HF's new router endpoint.
+  if (!HF_TOKEN) throw new Error('HUGGINGFACE_TOKEN not set');
+  const r = await fetch('https://router.huggingface.co/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${HF_TOKEN}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'mistralai/Mistral-7B-Instruct-v0.3:featherless-ai',
+      messages: [{ role: 'system', content: SYSTEM }, { role: 'user', content: prompt }],
+      max_tokens: 1500,
+      temperature: 0.3,
+    }),
+  });
+  if (!r.ok) throw new Error(`HF Router ${r.status}: ${await r.text()}`);
+  const j = await r.json();
+  return j.choices?.[0]?.message?.content ?? '';
+}
+
+async function callMistral(prompt: string): Promise<string> {
+  try { return await callOpenRouter(prompt); }
+  catch (e) {
+    if (!HF_TOKEN) throw e;
+    console.warn('OpenRouter failed, falling back to HF Router:', (e as Error).message);
+    return await callHFRouter(prompt);
+  }
 }
 
 Deno.serve(async (req) => {
