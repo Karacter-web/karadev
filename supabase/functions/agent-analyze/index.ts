@@ -4,7 +4,9 @@ import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const HF_TOKEN = Deno.env.get('HUGGINGFACE_TOKEN');
-const MISTRAL_MODEL = 'mistralai/Mistral-7B-Instruct-v0.3';
+const OPENROUTER_KEY = Deno.env.get('OPENROUTER_API_KEY');
+// HF serverless inference for v0.3 is gated/removed; route Mistral through OpenRouter (reliable).
+const MISTRAL_MODEL = 'mistralai/mistral-7b-instruct';
 
 function parseGitHubUrl(url: string): { owner: string; repo: string } | null {
   try {
