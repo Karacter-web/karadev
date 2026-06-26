@@ -9,7 +9,7 @@ export const branding = {
   tagline: "AI-powered collaborative development platform",
   parent: {
     name: "Karacterhub",
-    url: "https://dev.karacterhub.xyz",
+    url: "https://karadev-delta.vercel.app",
   },
   domains: {
     /** Public marketing / app root */
