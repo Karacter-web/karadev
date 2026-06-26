@@ -33,6 +33,8 @@ const AdminPrompts = lazy(() => import("./pages/admin/AdminPrompts"));
 const AdminAudit = lazy(() => import("./pages/admin/AdminAudit"));
 const AdminAgent = lazy(() => import("./pages/admin/AdminAgent"));
 const AdminAuditSettings = lazy(() => import("./pages/admin/AdminAuditSettings"));
+const Sandbox = lazy(() => import("./pages/admin/Sandbox"));
+const GitHubRepos = lazy(() => import("./pages/admin/GitHubRepos"));
 
 const queryClient = new QueryClient();
 
@@ -109,6 +111,8 @@ const App = () => (
                 <Route path="/admin/audit" element={<AdminRoute><ErrorBoundary fallbackTitle="Admin Error"><AdminAudit /></ErrorBoundary></AdminRoute>} />
                 <Route path="/admin/agent" element={<AdminRoute><ErrorBoundary fallbackTitle="Admin Error"><AdminAgent /></ErrorBoundary></AdminRoute>} />
                 <Route path="/admin/settings/audit" element={<AdminRoute><ErrorBoundary fallbackTitle="Admin Error"><AdminAuditSettings /></ErrorBoundary></AdminRoute>} />
+                <Route path="/admin/sandbox" element={<AdminRoute><ErrorBoundary fallbackTitle="Admin Error"><Sandbox /></ErrorBoundary></AdminRoute>} />
+                <Route path="/admin/github" element={<AdminRoute><ErrorBoundary fallbackTitle="Admin Error"><GitHubRepos /></ErrorBoundary></AdminRoute>} />
 
                 <Route path="/terms" element={<Terms />} />
                 <Route path="/privacy" element={<Privacy />} />
