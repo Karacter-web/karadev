@@ -9,6 +9,8 @@ import ReactMarkdown from "react-markdown";
 import { Send, Bot, User, Loader2, Sparkles, Brain, Plus, MessageSquare, Trash2, Search, Download, X, GitBranch, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fetchRepoSnapshot, hasGitHubToken } from "@/lib/github-token";
+import { branding, buildDevIdeUrl } from "@/config/branding";
+import { MessageSquareCode, Code2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -47,6 +49,22 @@ export default function Chat() {
   const [connectedRepos, setConnectedRepos] = useState<{ full_name: string; branch: string }[]>([]);
   const [activeRepo, setActiveRepo] = useState<string | null>(null);
   const [syncingRepo, setSyncingRepo] = useState(false);
+  const [mode, setMode] = useState<"chat" | "dev">(() => {
+    if (typeof window === "undefined") return "chat";
+    return (localStorage.getItem("karadev:mode") as "chat" | "dev") || "chat";
+  });
+  const [devSessionId] = useState<string>(() => {
+    if (typeof window === "undefined") return crypto.randomUUID();
+    let id = localStorage.getItem("karadev:dev-session");
+    if (!id) {
+      id = (crypto.randomUUID && crypto.randomUUID()) || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      localStorage.setItem("karadev:dev-session", id);
+    }
+    return id;
+  });
+  useEffect(() => {
+    try { localStorage.setItem("karadev:mode", mode); } catch { /* noop */ }
+  }, [mode]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -419,16 +437,47 @@ export default function Chat() {
               <Sparkles className="h-4 w-4 text-primary" />
             </div>
             <div className="min-w-0">
-              <h1 className="font-display font-semibold text-sm sm:text-base truncate">DevAgent</h1>
+              <h1 className="font-display font-semibold text-sm sm:text-base truncate">
+                {mode === "dev" ? `${branding.product} IDE` : branding.agent.name}
+              </h1>
               <p className="text-xs text-muted-foreground hidden sm:block">
-                {connectedRepos.length > 0
+                {mode === "dev"
+                  ? "Sandboxed Dev environment"
+                  : connectedRepos.length > 0
                   ? <span className="flex items-center gap-1"><GitBranch className="h-3 w-3 text-primary inline" /> {syncingRepo ? "Syncing…" : `Synced with ${activeRepo}`}</span>
                   : "Context-aware AI development assistant"}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {connectedRepos.length > 0 && (
+            {/* Mode toggle: Chat ↔ Dev */}
+            <div className="inline-flex items-center rounded-lg border bg-muted/40 p-0.5">
+              <button
+                onClick={() => setMode("chat")}
+                className={cn(
+                  "flex items-center gap-1 px-2 py-1 text-xs rounded-md transition-colors",
+                  mode === "chat" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                )}
+                title="Chat mode"
+                aria-pressed={mode === "chat"}
+              >
+                <MessageSquareCode className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Chat</span>
+              </button>
+              <button
+                onClick={() => setMode("dev")}
+                className={cn(
+                  "flex items-center gap-1 px-2 py-1 text-xs rounded-md transition-colors",
+                  mode === "dev" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                )}
+                title="Dev mode (VS Code IDE)"
+                aria-pressed={mode === "dev"}
+              >
+                <Code2 className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Dev</span>
+              </button>
+            </div>
+            {mode === "chat" && connectedRepos.length > 0 && (
               <>
                 <Select value={activeRepo ?? undefined} onValueChange={setActiveRepo}>
                   <SelectTrigger className="h-8 w-[160px] sm:w-[220px] text-xs">
@@ -454,14 +503,17 @@ export default function Chat() {
               </>
             )}
             {/* Export button */}
-            {messages.length > 0 && (
+            {mode === "chat" && messages.length > 0 && (
               <Button variant="ghost" size="sm" onClick={exportConversation} title="Export as Markdown">
                 <Download className="h-4 w-4" />
               </Button>
             )}
+            {mode === "chat" && (
             <Button variant="ghost" size="sm" className="md:hidden" onClick={newChat}>
               <Plus className="h-4 w-4" />
             </Button>
+            )}
+            {mode === "chat" && (
             <button
               onClick={() => setDeepThink(!deepThink)}
               className={cn(
@@ -473,9 +525,25 @@ export default function Chat() {
               <Brain className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Deep Think</span>
             </button>
+            )}
           </div>
         </div>
 
+        {mode === "dev" ? (
+          /* Dev mode — sandboxed VS Code IDE iframe */
+          <div className="flex-1 min-h-0 bg-muted/20">
+            <iframe
+              key={devSessionId}
+              src={buildDevIdeUrl(devSessionId)}
+              title={`${branding.product} Dev IDE`}
+              className="w-full h-full border-0"
+              sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-downloads allow-clipboard-write"
+              allow="clipboard-read; clipboard-write; cross-origin-isolated"
+              referrerPolicy="strict-origin-when-cross-origin"
+            />
+          </div>
+        ) : (
+        <>
         {/* Messages */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
           {messages.length === 0 && (
@@ -584,6 +652,8 @@ export default function Chat() {
             {deepThink ? "Deep Think ON — AI analyzes before responding" : "Shift+Enter for new line"}
           </p>
         </div>
+        </>
+        )}
       </div>
     </div>
   );
