@@ -9,11 +9,11 @@ export const branding = {
   tagline: "AI-powered collaborative development platform",
   parent: {
     name: "Karacterhub",
-    url: "https://karacterhub.xyz",
+    url: "https://dev.karacterhub.xyz",
   },
   domains: {
     /** Public marketing / app root */
-    app: "https://karadev.karacterhub.xyz",
+    app: "https://karacterhub.xyz",
     /** Dev mode IDE host (the embedded VS Code experience) */
     devIde: "https://dev.karacterhub.xyz/ide",
     /** Local fallback used during development */
