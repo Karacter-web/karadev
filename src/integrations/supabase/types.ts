@@ -571,6 +571,39 @@ export type Database = {
           },
         ]
       }
+      sandbox_snippets: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          language: string
+          last_output: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          code?: string
+          created_at?: string
+          id?: string
+          language?: string
+          last_output?: string | null
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          language?: string
+          last_output?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
           assigned_to: string | null
