@@ -137,8 +137,10 @@ async function runScan(target: string, admin: ReturnType<typeof createClient>) {
     indexed.infrastructure = ['supabase-edge-functions','supabase-auth','supabase-postgrest','supabase-realtime'];
   }
   if (target === 'full' || target === 'code') {
-    indexed.codebase = ['edge-functions/*'];
-    warnings.push('Codebase static analysis requires repo access; edge-function runtime cannot read frontend source. Run linter in CI for full code coverage.');
+    try {
+      const r = await scanCode();
+      indexed.codebase = r.indexed; issues = issues.concat(r.issues); warnings.push(...r.warnings);
+    } catch (e) { warnings.push(`code scan failed: ${(e as Error).message}`); }
   }
 
   const by_severity = { critical: 0, high: 0, medium: 0, low: 0 } as Record<Severity, number>;
@@ -146,6 +148,68 @@ async function runScan(target: string, admin: ReturnType<typeof createClient>) {
   for (const i of issues) { by_severity[i.severity]++; by_category[i.category]++; }
 
   return { indexed, results: { errors: issues }, warnings, summary: { total_issues: issues.length, by_severity, by_category } };
+}
+
+// Static analysis over repos connected via the Karacterhub GitHub App installation.
+async function scanCode(): Promise<{ indexed: string[]; issues: Issue[]; warnings: string[] }> {
+  const indexed: string[] = []; const issues: Issue[] = []; const warnings: string[] = [];
+  try {
+    const { getInstallationToken, ghHeaders } = await import('../_shared/github-app.ts');
+    const token = await getInstallationToken();
+    const headers = ghHeaders(token);
+    const repoListRes = await fetch('https://api.github.com/installation/repositories?per_page=50', { headers });
+    if (!repoListRes.ok) { warnings.push(`Repo list: ${repoListRes.status}`); return { indexed, issues, warnings }; }
+    const repos = ((await repoListRes.json()).repositories ?? []).slice(0, 10);
+    for (const repo of repos) {
+      indexed.push(repo.full_name);
+      const branch = repo.default_branch || 'main';
+      const treeRes = await fetch(`https://api.github.com/repos/${repo.full_name}/git/trees/${branch}?recursive=1`, { headers });
+      if (!treeRes.ok) continue;
+      const tree = await treeRes.json();
+      const files = (tree.tree as any[]).filter((n) => n.type === 'blob');
+      const pkg = files.find((f) => f.path === 'package.json');
+      if (pkg) {
+        const r = await fetch(`https://api.github.com/repos/${repo.full_name}/contents/package.json?ref=${branch}`, { headers });
+        if (r.ok) {
+          const c = await r.json();
+          const decoded = atob(c.content.replace(/\n/g, ''));
+          try {
+            const json = JSON.parse(decoded);
+            const deps = { ...(json.dependencies ?? {}), ...(json.devDependencies ?? {}) };
+            for (const [name, ver] of Object.entries(deps)) {
+              if (typeof ver === 'string' && /^[\^~]?0\.0\./.test(ver)) {
+                issues.push(newIssue({ category: 'codebase', severity: 'low',
+                  title: `Pinned to pre-release: ${name}@${ver}`,
+                  description: `${name} is pinned to a 0.0.x release in ${repo.full_name}; expect breaking changes.`,
+                  location: `${repo.full_name}/package.json`,
+                  suggested_fix: `Upgrade ${name} to a stable release and re-run tests.` }));
+              }
+            }
+          } catch { /* ignore parse */ }
+        }
+      }
+      // Sample first 25 small text files for secret patterns
+      const text = files.filter((f) => /\.(t|j)sx?$|\.env|\.ya?ml|\.json|\.md$/.test(f.path)).slice(0, 25);
+      for (const f of text) {
+        const r = await fetch(`https://api.github.com/repos/${repo.full_name}/contents/${encodeURIComponent(f.path)}?ref=${branch}`, { headers });
+        if (!r.ok) continue;
+        const c = await r.json();
+        if (c.size > 200_000) continue;
+        const decoded = atob((c.content ?? '').replace(/\n/g, ''));
+        for (const pat of SECRET_PATTERNS) {
+          if (pat.re.test(decoded)) {
+            issues.push(newIssue({ category: 'security', severity: 'critical',
+              title: `Possible ${pat.name} in ${repo.full_name}/${f.path}`,
+              description: `Pattern matching ${pat.name} found in source. Confirm and rotate immediately if real.`,
+              location: `${repo.full_name}/${f.path}`,
+              suggested_fix: `Remove the value from source, rotate the credential, and load it from an environment variable / secret manager.` }));
+            break;
+          }
+        }
+      }
+    }
+  } catch (e) { warnings.push(`code scan: ${(e as Error).message}`); }
+  return { indexed, issues, warnings };
 }
 
 Deno.serve(async (req) => {

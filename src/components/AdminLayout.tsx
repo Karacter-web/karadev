@@ -2,12 +2,14 @@ import { ReactNode } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
-import { Shield, Users, Building2, BookTemplate, LayoutDashboard, LogOut, ArrowLeft, Bot, ShieldAlert, Settings2 } from "lucide-react";
+import { Shield, Users, Building2, BookTemplate, LayoutDashboard, LogOut, ArrowLeft, Bot, ShieldAlert, Settings2, Terminal, Github } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const items = [
   { to: "/admin", label: "Overview", icon: LayoutDashboard, end: true },
   { to: "/admin/agent", label: "Build Agent", icon: Bot },
+  { to: "/admin/sandbox", label: "Sandbox", icon: Terminal },
+  { to: "/admin/github", label: "GitHub", icon: Github },
   { to: "/admin/audit", label: "Audit Scans", icon: ShieldAlert },
   { to: "/admin/users", label: "Users", icon: Users },
   { to: "/admin/workspaces", label: "Workspaces", icon: Building2 },
