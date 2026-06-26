@@ -30,6 +30,17 @@ export default function Sandbox() {
   const [currentId, setCurrentId] = useState<string | null>(null);
 
   useEffect(() => { load(); }, []);
+  useEffect(() => {
+    const raw = sessionStorage.getItem("karadev.sandbox.prefill");
+    if (!raw) return;
+    try {
+      const p = JSON.parse(raw);
+      if (p.title) setTitle(p.title);
+      if (p.language) setLanguage(p.language);
+      if (typeof p.code === "string") setCode(p.code);
+    } catch { /* ignore */ }
+    sessionStorage.removeItem("karadev.sandbox.prefill");
+  }, []);
   async function load() {
     const { data } = await supabase.from("sandbox_snippets").select("*").order("updated_at", { ascending: false }).limit(50);
     setSnippets((data ?? []) as Snippet[]);
