@@ -6,7 +6,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Bot, Github, Loader2, Sparkles, ExternalLink, FileCode } from "lucide-react";
+import { Bot, Github, Loader2, Sparkles, ExternalLink, FileCode, Terminal } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 type Stage = "idle" | "analyzing" | "scaffolding" | "deploying" | "done" | "error";
 
@@ -24,6 +25,7 @@ type Run = {
 };
 
 export default function AdminAgent() {
+  const navigate = useNavigate();
   const [prompt, setPrompt] = useState("");
   const [sourceUrl, setSourceUrl] = useState("");
   const [stage, setStage] = useState<Stage>("idle");
@@ -110,6 +112,12 @@ export default function AdminAgent() {
     error: "Failed",
   };
 
+  function openInSandbox(file: { path: string; content: string }) {
+    const lang = file.path.endsWith(".py") ? "python" : file.path.endsWith(".ts") || file.path.endsWith(".tsx") ? "typescript" : "javascript";
+    sessionStorage.setItem("karadev.sandbox.prefill", JSON.stringify({ title: file.path, language: lang, code: file.content }));
+    navigate("/admin/sandbox");
+  }
+
   return (
     <div className="p-6 md:p-8 max-w-6xl mx-auto space-y-6">
       <div className="flex items-center gap-3">
@@ -173,7 +181,14 @@ export default function AdminAgent() {
             {files.map((f) => (
               <div key={f.path} className="flex items-center justify-between gap-4 py-1 border-b border-border/40 last:border-0">
                 <span className="truncate">{f.path}</span>
-                <span className="text-muted-foreground shrink-0">{f.content.length} chars</span>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-muted-foreground">{f.content.length} chars</span>
+                  {(f.path.endsWith(".py") || f.path.endsWith(".js") || f.path.endsWith(".ts") || f.path.endsWith(".tsx")) && (
+                    <Button size="sm" variant="ghost" onClick={() => openInSandbox(f)}>
+                      <Terminal className="h-3 w-3 mr-1" /> Run
+                    </Button>
+                  )}
+                </div>
               </div>
             ))}
           </div>
