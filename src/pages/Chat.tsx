@@ -9,6 +9,8 @@ import ReactMarkdown from "react-markdown";
 import { Send, Bot, User, Loader2, Sparkles, Brain, Plus, MessageSquare, Trash2, Search, Download, X, GitBranch, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fetchRepoSnapshot, hasGitHubToken } from "@/lib/github-token";
+import { branding, buildDevIdeUrl } from "@/config/branding";
+import { MessageSquareCode, Code2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -47,6 +49,22 @@ export default function Chat() {
   const [connectedRepos, setConnectedRepos] = useState<{ full_name: string; branch: string }[]>([]);
   const [activeRepo, setActiveRepo] = useState<string | null>(null);
   const [syncingRepo, setSyncingRepo] = useState(false);
+  const [mode, setMode] = useState<"chat" | "dev">(() => {
+    if (typeof window === "undefined") return "chat";
+    return (localStorage.getItem("karadev:mode") as "chat" | "dev") || "chat";
+  });
+  const [devSessionId] = useState<string>(() => {
+    if (typeof window === "undefined") return crypto.randomUUID();
+    let id = localStorage.getItem("karadev:dev-session");
+    if (!id) {
+      id = (crypto.randomUUID && crypto.randomUUID()) || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      localStorage.setItem("karadev:dev-session", id);
+    }
+    return id;
+  });
+  useEffect(() => {
+    try { localStorage.setItem("karadev:mode", mode); } catch { /* noop */ }
+  }, [mode]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
