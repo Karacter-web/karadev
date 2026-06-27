@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Loader2, Play, Save, Terminal, FileCode } from "lucide-react";
+import { Loader2, Play, Save, Terminal, FileCode, Rocket, Copy, CheckCircle2 } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 type Lang = "python" | "javascript" | "typescript";
 type Snippet = { id: string; title: string; language: string; code: string; last_output: string | null; updated_at: string };
@@ -28,8 +29,12 @@ export default function Sandbox() {
   const [execMs, setExecMs] = useState<number | null>(null);
   const [snippets, setSnippets] = useState<Snippet[]>([]);
   const [currentId, setCurrentId] = useState<string | null>(null);
+  const [endpointId, setEndpointId] = useState<string | null>(null);
+  const [checkingEndpoint, setCheckingEndpoint] = useState(true);
+  const [settingUp, setSettingUp] = useState(false);
+  const [newEndpointId, setNewEndpointId] = useState<string | null>(null);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); checkEndpoint(); }, []);
   useEffect(() => {
     const raw = sessionStorage.getItem("karadev.sandbox.prefill");
     if (!raw) return;
@@ -44,6 +49,38 @@ export default function Sandbox() {
   async function load() {
     const { data } = await supabase.from("sandbox_snippets").select("*").order("updated_at", { ascending: false }).limit(50);
     setSnippets((data ?? []) as Snippet[]);
+  }
+
+  async function checkEndpoint() {
+    setCheckingEndpoint(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("runpod-setup", { body: {} });
+      if (error) throw new Error(error.message);
+      setEndpointId((data as any)?.endpointId ?? null);
+    } catch {
+      setEndpointId(null);
+    } finally {
+      setCheckingEndpoint(false);
+    }
+  }
+
+  async function setupRunPod() {
+    setSettingUp(true);
+    setNewEndpointId(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("runpod-setup", { body: { create: true } });
+      if (error) throw new Error(error.message);
+      const d = data as any;
+      if (d.error) throw new Error(d.error);
+      if (!d.endpointId) throw new Error("No endpointId returned");
+      setNewEndpointId(d.endpointId);
+      setEndpointId(d.endpointId);
+      toast.success(d.created ? "RunPod endpoint created" : "Existing RunPod endpoint found");
+    } catch (e: any) {
+      toast.error(`RunPod setup failed: ${e.message}`);
+    } finally {
+      setSettingUp(false);
+    }
   }
 
   async function run() {
@@ -92,6 +129,44 @@ export default function Sandbox() {
           <p className="text-sm text-muted-foreground">Run code in an ephemeral RunPod container. Admin-only.</p>
         </div>
       </div>
+      {!checkingEndpoint && !endpointId && (
+        <Card className="p-4 border-primary/40 bg-primary/5">
+          <div className="flex items-start gap-3">
+            <div className="h-9 w-9 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
+              <Rocket className="h-4 w-4 text-primary" />
+            </div>
+            <div className="flex-1 space-y-2">
+              <div>
+                <div className="font-medium">RunPod endpoint not configured</div>
+                <p className="text-sm text-muted-foreground">
+                  Provision a free-tier CPU serverless endpoint (<code>karacterhub-sandbox-free</code>, image <code>runpod/python-node:3.10</code>) using your existing <code>RUNPOD_API_KEY</code>. Python execution requires this; JS/TS already runs via local fallback.
+                </p>
+              </div>
+              <Button onClick={setupRunPod} disabled={settingUp}>
+                {settingUp ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Rocket className="h-4 w-4 mr-2" />}
+                {settingUp ? "Provisioning…" : "Setup RunPod"}
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
+      {newEndpointId && (
+        <Alert>
+          <CheckCircle2 className="h-4 w-4" />
+          <AlertTitle>Endpoint ready — save it as a secret</AlertTitle>
+          <AlertDescription className="space-y-2">
+            <p className="text-sm">
+              Add this as <code>RUNPOD_ENDPOINT_ID</code> in Supabase Edge Function secrets so <code>runpod-execute</code> can route to it.
+            </p>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 text-xs bg-muted px-2 py-1 rounded font-mono">{newEndpointId}</code>
+              <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(newEndpointId); toast.success("Copied"); }}>
+                <Copy className="h-4 w-4" />
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-4">
         <Card className="p-4 space-y-3">
           <div className="flex gap-2 items-center">
