@@ -1,14 +1,9 @@
-User-agent: Googlebot
-Disallow: /
-
-User-agent: Bingbot
-Disallow: /
-
-User-agent: Twitterbot
-Disallow: /
-
-User-agent: facebookexternalhit
-Disallow: /
-
 User-agent: *
 Allow: /
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /auth
+Disallow: /reset-password
+Disallow: /embed
+
+Sitemap: /sitemap.xml
