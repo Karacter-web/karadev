@@ -108,11 +108,17 @@ export default function Chat() {
     })();
   }, [effectiveWsId]);
 
+  // Hydrate the GitHub token cache once per session.
+  useEffect(() => {
+    loadGitHubToken();
+  }, []);
+
   // Sync (fetch tree + manifests + README) for the currently selected repo
   const syncRepoContext = useCallback(async () => {
     if (!activeRepo) return;
     const repo = connectedRepos.find((r) => r.full_name === activeRepo);
     if (!repo) return;
+    await loadGitHubToken();
     if (!hasGitHubToken()) {
       setRepoContext(
         `Connected repos: ${connectedRepos
