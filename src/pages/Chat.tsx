@@ -12,13 +12,13 @@ import { fetchRepoSnapshot, hasGitHubToken, loadGitHubToken } from "@/lib/github
 import { branding, buildDevIdeUrl } from "@/config/branding";
 import { MessageSquareCode, Code2 } from "lucide-react";
 import {
-import { SEO } from "@/components/SEO";
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SEO } from "@/components/SEO";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
