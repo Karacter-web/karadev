@@ -1,7 +1,7 @@
-import { Github, Cloud, Triangle, Globe, Sparkles, Database } from "lucide-react";
+import { Github, Cloud, Triangle, Globe, Database } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-export type ProviderName = "github" | "supabase" | "vercel" | "netlify" | "google" | "lovable";
+export type ProviderName = "github" | "supabase" | "vercel" | "netlify" | "google";
 
 export type ProviderField = {
   key: string;
@@ -65,15 +65,6 @@ export const PROVIDERS: ProviderConfig[] = [
     capabilities: ["cloud.read", "projects.read"],
     helpUrl: "https://console.cloud.google.com/apis/credentials",
     fields: [{ key: "token", label: "OAuth Access Token", placeholder: "ya29.xxxxx...", type: "password" }],
-  },
-  {
-    name: "lovable",
-    label: "Lovable",
-    description: "AI-powered development gateway",
-    icon: Sparkles,
-    capabilities: ["ai.read", "ai.write"],
-    helpUrl: "https://lovable.dev",
-    fields: [{ key: "token", label: "API Token", placeholder: "lov_xxxxxxxxxxxx", type: "password" }],
   },
 ];
 
