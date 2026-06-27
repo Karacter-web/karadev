@@ -12,6 +12,7 @@ import { fetchRepoSnapshot, hasGitHubToken, loadGitHubToken } from "@/lib/github
 import { branding, buildDevIdeUrl } from "@/config/branding";
 import { MessageSquareCode, Code2 } from "lucide-react";
 import {
+import { SEO } from "@/components/SEO";
   Select,
   SelectContent,
   SelectItem,
@@ -381,6 +382,7 @@ export default function Chat() {
 
   return (
     <div className="flex h-full">
+      <SEO title={"AI Chat — Karadev"} description={"Chat with a codebase-aware AI about your repositories, generate code, and explore your stack."} path={"/dashboard/chat"} noindex />
       {/* Sidebar — conversation history */}
       <div className="hidden md:flex flex-col w-64 border-r bg-muted/30">
         <div className="p-3 border-b space-y-2">

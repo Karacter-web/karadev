@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Users, Crown, Code, Eye } from "lucide-react";
+import { SEO } from "@/components/SEO";
 
 const roleIcons = { admin: Crown, developer: Code, viewer: Eye };
 
@@ -29,6 +30,7 @@ export default function Team() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto space-y-6">
+      <SEO title={"Team — Karadev"} description={"Manage workspace members, roles, and collaboration in Karadev."} path={"/dashboard/team"} noindex />
       <div>
         <h1 className="text-2xl sm:text-3xl font-display font-bold">Team</h1>
         <p className="text-muted-foreground mt-1 text-sm">Manage your workspace members</p>

@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Bot, GitBranch, Users, MessageSquare, Zap, ArrowRight, CheckCircle } from "lucide-react";
+import { SEO } from "@/components/SEO";
 
 const features = [
   { icon: GitBranch, title: "Connect Repos", desc: "Link your GitHub repositories and give the AI full codebase context." },
@@ -22,6 +23,7 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO title={"Karadev — AI Teammate for Your Codebase"} description={"Karadev connects your GitHub repos to an AI teammate that understands your code and collaborates with your team in real time."} path={"/"} />
       {/* Nav */}
       <nav className="fixed top-0 inset-x-0 z-50 glass">
         <div className="max-w-6xl mx-auto flex items-center justify-between px-6 py-4">

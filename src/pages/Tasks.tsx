@@ -13,6 +13,7 @@ import { toast } from "@/hooks/use-toast";
 import { CheckSquare, Plus, Circle, Clock, CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/integrations/supabase/types";
+import { SEO } from "@/components/SEO";
 
 type TaskStatus = Database["public"]["Enums"]["task_status"];
 
@@ -67,6 +68,7 @@ export default function Tasks() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto space-y-6">
+      <SEO title={"Tasks — Karadev"} description={"Track tasks generated from AI conversations and team work in Karadev."} path={"/dashboard/tasks"} noindex />
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl sm:text-3xl font-display font-bold">Tasks</h1>
