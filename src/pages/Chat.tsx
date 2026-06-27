@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SEO } from "@/components/SEO";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -381,6 +382,7 @@ export default function Chat() {
 
   return (
     <div className="flex h-full">
+      <SEO title={"AI Chat — Karadev"} description={"Chat with a codebase-aware AI about your repositories, generate code, and explore your stack."} path={"/dashboard/chat"} noindex />
       {/* Sidebar — conversation history */}
       <div className="hidden md:flex flex-col w-64 border-r bg-muted/30">
         <div className="p-3 border-b space-y-2">
@@ -420,6 +422,7 @@ export default function Chat() {
               <span className="truncate flex-1">{c.title}</span>
               <button
                 onClick={(e) => { e.stopPropagation(); deleteConversation(c.id); }}
+                aria-label={`Delete conversation ${c.title}`}
                 className="opacity-0 group-hover:opacity-100 hover:text-destructive transition-opacity"
               >
                 <Trash2 className="h-3.5 w-3.5" />
@@ -510,12 +513,12 @@ export default function Chat() {
             )}
             {/* Export button */}
             {mode === "chat" && messages.length > 0 && (
-              <Button variant="ghost" size="sm" onClick={exportConversation} title="Export as Markdown">
+              <Button variant="ghost" size="sm" onClick={exportConversation} title="Export as Markdown" aria-label="Export conversation as Markdown">
                 <Download className="h-4 w-4" />
               </Button>
             )}
             {mode === "chat" && (
-            <Button variant="ghost" size="sm" className="md:hidden" onClick={newChat}>
+            <Button variant="ghost" size="sm" className="md:hidden" onClick={newChat} aria-label="Start new chat">
               <Plus className="h-4 w-4" />
             </Button>
             )}
@@ -650,7 +653,7 @@ export default function Chat() {
               disabled={isLoading}
               rows={1}
             />
-            <Button type="submit" disabled={isLoading || !input.trim()} size="icon" className="shrink-0 h-10 w-10">
+            <Button type="submit" disabled={isLoading || !input.trim()} size="icon" aria-label="Send message" className="shrink-0 h-10 w-10">
               <Send className="h-4 w-4" />
             </Button>
           </form>

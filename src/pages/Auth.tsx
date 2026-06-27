@@ -11,6 +11,7 @@ import { Bot, ArrowLeft, Eye, EyeOff, Check, X, Mail, Loader2, Github } from "lu
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
+import { SEO } from "@/components/SEO";
 
 type AuthView = "signIn" | "signUp" | "forgotPassword";
 
@@ -48,6 +49,19 @@ export default function Auth() {
   const navigate = useNavigate();
 
   const strength = useMemo(() => getPasswordStrength(password), [password]);
+
+  const seoTitle =
+    view === "forgotPassword"
+      ? "Reset Password — Karadev"
+      : view === "signUp"
+      ? "Create Account — Karadev"
+      : "Sign In — Karadev";
+  const seoDesc =
+    view === "forgotPassword"
+      ? "Reset your Karadev password to regain access to your workspace."
+      : view === "signUp"
+      ? "Create a Karadev account and start collaborating with AI on your codebase."
+      : "Sign in to Karadev to chat with AI about your repositories and collaborate with your team.";
 
   const handleOAuth = async (provider: "google" | "github") => {
     const setLoadingFn = provider === "google" ? setGoogleLoading : setGithubLoading;
@@ -136,6 +150,14 @@ export default function Auth() {
         transition={{ duration: 0.5 }}
         className="w-full max-w-md relative z-10"
       >
+        <SEO title={seoTitle} description={seoDesc} path="/auth" noindex />
+        <h1 className="sr-only">
+          {view === "forgotPassword"
+            ? "Reset your Karadev password"
+            : view === "signUp"
+            ? "Create your Karadev account"
+            : "Sign in to Karadev"}
+        </h1>
         <Button variant="ghost" className="mb-6" onClick={() => navigate("/")}>
           <ArrowLeft className="mr-2 h-4 w-4" /> Back
         </Button>

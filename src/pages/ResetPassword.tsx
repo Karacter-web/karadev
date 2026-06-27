@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { Bot, Eye, EyeOff } from "lucide-react";
+import { SEO } from "@/components/SEO";
 
 export default function ResetPassword() {
   const [password, setPassword] = useState("");
@@ -67,6 +68,13 @@ export default function ResetPassword() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <SEO
+        title="Set a New Password — Karadev"
+        description="Choose a new password for your Karadev account to finish recovering access."
+        path="/reset-password"
+        noindex
+      />
+      <h1 className="sr-only">Set a new Karadev password</h1>
       <Card className="w-full max-w-md glass glow-primary">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">

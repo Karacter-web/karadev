@@ -46,7 +46,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           {(!collapsed || isMobile) && <span className="font-display font-bold text-sidebar-primary-foreground">Karadev</span>}
         </div>
         {isMobile && (
-          <button onClick={() => setMobileOpen(false)} className="text-sidebar-foreground/70 p-1">
+          <button onClick={() => setMobileOpen(false)} aria-label="Close menu" className="text-sidebar-foreground/70 p-1">
             <X className="h-5 w-5" />
           </button>
         )}
@@ -109,7 +109,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       {/* Mobile top bar */}
       {isMobile && (
         <div className="fixed top-0 left-0 right-0 z-40 h-14 bg-sidebar text-sidebar-foreground border-b border-sidebar-border flex items-center px-4 gap-3">
-          <button onClick={() => setMobileOpen(true)} className="p-1">
+          <button onClick={() => setMobileOpen(true)} aria-label="Open menu" className="p-1">
             <Menu className="h-5 w-5" />
           </button>
           <div className="h-7 w-7 rounded-lg bg-sidebar-primary flex items-center justify-center">

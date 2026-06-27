@@ -38,6 +38,7 @@ const statusColors: Record<Integration["status"], string> = {
 
 import { setGitHubToken, hasGitHubToken, loadGitHubToken } from "@/lib/github-token";
 import ConnectorsSection from "@/components/ConnectorsSection";
+import { SEO } from "@/components/SEO";
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -220,6 +221,7 @@ export default function SettingsPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-3xl mx-auto space-y-6">
+      <SEO title={"Settings — Karadev"} description={"Manage your Karadev profile, integrations, API keys, and workspace preferences."} path={"/dashboard/settings"} noindex />
       <div>
         <h1 className="text-2xl sm:text-3xl font-display font-bold">Settings</h1>
         <p className="text-muted-foreground mt-1 text-sm">Manage your account & view integrations</p>

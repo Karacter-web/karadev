@@ -1,0 +1,11 @@
+# Karadev
+
+> AI-powered collaborative development platform — connect GitHub repos, chat with a codebase-aware AI, and collaborate with your team.
+
+Karadev gives engineering teams a shared AI teammate that understands their actual code. It connects to GitHub, lets teams chat with AI about their repositories, tracks tasks, and shares prompt libraries across the workspace.
+
+## Pages
+
+- [Home](/): Product overview, features, and how Karadev works.
+- [Terms of Service](/terms): Acceptable use, accounts, and liability.
+- [Privacy Policy](/privacy): How Karadev handles user data and code context.

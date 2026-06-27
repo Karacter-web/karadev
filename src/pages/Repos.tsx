@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "@/hooks/use-toast";
 import { GitBranch, Plus, ExternalLink, FolderOpen } from "lucide-react";
 import GitHubFileBrowser from "@/components/GitHubFileBrowser";
+import { SEO } from "@/components/SEO";
 
 export default function Repos() {
   const { user } = useAuth();
@@ -59,6 +60,7 @@ export default function Repos() {
   if (browsingRepo) {
     return (
       <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto">
+        <SEO title={"Repositories — Karadev"} description={"Connect GitHub repositories to Karadev so the AI can read your codebase."} path={"/dashboard/repos"} noindex />
         <GitHubFileBrowser
           repoFullName={browsingRepo.fullName}
           defaultBranch={browsingRepo.branch}

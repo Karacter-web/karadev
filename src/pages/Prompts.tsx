@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "@/hooks/use-toast";
 import { BookTemplate, Plus, Copy } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SEO } from "@/components/SEO";
 
 export default function Prompts() {
   const { user } = useAuth();
@@ -65,6 +66,7 @@ export default function Prompts() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto space-y-6">
+      <SEO title={"Prompt Library — Karadev"} description={"Reusable AI prompt templates for your Karadev workspace."} path={"/dashboard/prompts"} noindex />
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl sm:text-3xl font-display font-bold">Prompt Templates</h1>
