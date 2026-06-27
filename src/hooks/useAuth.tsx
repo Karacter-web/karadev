@@ -51,11 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email,
       password,
       options: {
-        // Correct metadata mapping for custom user information
-        data: { 
-          full_name: displayName,
-          display_name: displayName // Fallback mapping
-        },
+        data: { display_name: displayName },
         emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     });

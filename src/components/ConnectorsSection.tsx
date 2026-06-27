@@ -9,7 +9,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { PROVIDERS, type ProviderConfig, type ProviderName } from "@/lib/connectors/providers";
 import { ADAPTERS } from "@/lib/connectors/adapters";
-import { obfuscate, deobfuscate } from "@/lib/connectors/obfuscate";
 
 type ConnectorRow = {
   id: string;
@@ -56,7 +55,7 @@ export default function ConnectorsSection({ userId }: { userId: string }) {
       return;
     }
     setBusy(provider.name);
-    const creds = { token: obfuscate(draftToken.trim()) };
+    const creds = { token: draftToken.trim() };
     const result = await ADAPTERS[provider.name].validate(creds);
     const payload = {
       user_id: userId,
@@ -126,7 +125,7 @@ export default function ConnectorsSection({ userId }: { userId: string }) {
           <div>
             <CardTitle>Connectors</CardTitle>
             <CardDescription>
-              Connect external services (GitHub, Supabase, Vercel, Netlify, Google Cloud, Lovable) with personal
+          Connect external services (GitHub, Supabase, Vercel, Netlify, Google Cloud) with personal
               tokens. Each connector is validated against the live provider API and health-checked on demand.
             </CardDescription>
           </div>
@@ -219,8 +218,8 @@ export default function ConnectorsSection({ userId }: { userId: string }) {
           );
         })}
         <p className="text-[11px] text-muted-foreground italic pt-2 border-t border-border">
-          Tokens are lightly obfuscated and scoped to your user via RLS. For production secrets, use a server-side
-          secret vault instead of personal tokens stored at-rest.
+          Tokens are stored in Supabase and scoped to your user via row-level security. For production secrets,
+          use a server-side secret vault and encrypt at-rest with a server-only key.
         </p>
       </CardContent>
     </Card>

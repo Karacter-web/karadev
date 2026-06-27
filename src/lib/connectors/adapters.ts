@@ -1,5 +1,4 @@
 import type { ProviderName } from "./providers";
-import { deobfuscate } from "./obfuscate";
 
 export type ValidateResult = {
   valid: boolean;
@@ -20,7 +19,12 @@ type Adapter = {
   healthCheck(creds: Record<string, string>): Promise<HealthResult>;
 };
 
-const token = (c: Record<string, string>) => deobfuscate(c.token || "");
+// Credentials are stored as plaintext in `user_connectors`, protected by
+// row-level security (only the owning user can read their row). Client-side
+// reversible obfuscation provides no real protection, so it has been removed.
+// For at-rest encryption, move credential handling into an edge function and
+// encrypt with `crypto.subtle` (AES-GCM) using a server-only key.
+const token = (c: Record<string, string>) => c.token || "";
 
 const githubAdapter: Adapter = {
   async validate(c) {
@@ -146,23 +150,10 @@ const googleAdapter: Adapter = {
   },
 };
 
-const lovableAdapter: Adapter = {
-  async validate(c) {
-    const t = token(c);
-    if (!t || t.length < 8) return { valid: false, error: "Token too short", capabilities: [] };
-    return { valid: true, capabilities: ["ai.read", "ai.write"] };
-  },
-  async healthCheck(c) {
-    const t = token(c);
-    return { healthy: Boolean(t && t.length >= 8) };
-  },
-};
-
 export const ADAPTERS: Record<ProviderName, Adapter> = {
   github: githubAdapter,
   supabase: supabaseAdapter,
   vercel: vercelAdapter,
   netlify: netlifyAdapter,
   google: googleAdapter,
-  lovable: lovableAdapter,
 };

@@ -8,7 +8,7 @@ import { toast } from "@/hooks/use-toast";
 import ReactMarkdown from "react-markdown";
 import { Send, Bot, User, Loader2, Sparkles, Brain, Plus, MessageSquare, Trash2, Search, Download, X, GitBranch, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { fetchRepoSnapshot, hasGitHubToken } from "@/lib/github-token";
+import { fetchRepoSnapshot, hasGitHubToken, loadGitHubToken } from "@/lib/github-token";
 import { branding, buildDevIdeUrl } from "@/config/branding";
 import { MessageSquareCode, Code2 } from "lucide-react";
 import {
@@ -108,11 +108,17 @@ export default function Chat() {
     })();
   }, [effectiveWsId]);
 
+  // Hydrate the GitHub token cache once per session.
+  useEffect(() => {
+    loadGitHubToken();
+  }, []);
+
   // Sync (fetch tree + manifests + README) for the currently selected repo
   const syncRepoContext = useCallback(async () => {
     if (!activeRepo) return;
     const repo = connectedRepos.find((r) => r.full_name === activeRepo);
     if (!repo) return;
+    await loadGitHubToken();
     if (!hasGitHubToken()) {
       setRepoContext(
         `Connected repos: ${connectedRepos
