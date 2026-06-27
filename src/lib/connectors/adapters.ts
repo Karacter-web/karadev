@@ -150,18 +150,6 @@ const googleAdapter: Adapter = {
   },
 };
 
-const lovableAdapter: Adapter = {
-  async validate(c) {
-    const t = token(c);
-    if (!t || t.length < 8) return { valid: false, error: "Token too short", capabilities: [] };
-    return { valid: true, capabilities: ["ai.read", "ai.write"] };
-  },
-  async healthCheck(c) {
-    const t = token(c);
-    return { healthy: Boolean(t && t.length >= 8) };
-  },
-};
-
 export const ADAPTERS: Record<ProviderName, Adapter> = {
   github: githubAdapter,
   supabase: supabaseAdapter,
