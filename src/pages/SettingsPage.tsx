@@ -36,7 +36,7 @@ const statusColors: Record<Integration["status"], string> = {
   available: "bg-muted text-muted-foreground border-border",
 };
 
-import { getGitHubToken, setGitHubToken, hasGitHubToken } from "@/lib/github-token";
+import { setGitHubToken, hasGitHubToken, loadGitHubToken } from "@/lib/github-token";
 import ConnectorsSection from "@/components/ConnectorsSection";
 
 export default function SettingsPage() {
@@ -66,7 +66,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     setDark(document.documentElement.classList.contains("dark"));
-    setHasStoredToken(hasGitHubToken());
+    loadGitHubToken().then(() => setHasStoredToken(hasGitHubToken()));
     // Real-time DB health check
     const check = async () => {
       try {
@@ -177,22 +177,30 @@ export default function SettingsPage() {
     toast({ title: "API key revoked" });
   };
 
-  const saveGhToken = () => {
+  const saveGhToken = async () => {
     if (!ghToken.trim()) return;
-    setGitHubToken(ghToken.trim());
-    setHasStoredToken(true);
-    setTokenSaved(true);
-    setGhToken("");
-    setShowToken(false);
-    toast({ title: "GitHub token saved", description: "Your personal access token has been stored locally." });
-    setTimeout(() => setTokenSaved(false), 2000);
+    try {
+      await setGitHubToken(ghToken.trim());
+      setHasStoredToken(true);
+      setTokenSaved(true);
+      setGhToken("");
+      setShowToken(false);
+      toast({ title: "GitHub token saved", description: "Validated with GitHub and stored securely in Supabase." });
+      setTimeout(() => setTokenSaved(false), 2000);
+    } catch (e: any) {
+      toast({ title: "Failed to save token", description: e.message, variant: "destructive" });
+    }
   };
 
-  const removeGhToken = () => {
-    setGitHubToken("");
-    setHasStoredToken(false);
-    setGhToken("");
-    toast({ title: "GitHub token removed" });
+  const removeGhToken = async () => {
+    try {
+      await setGitHubToken("");
+      setHasStoredToken(false);
+      setGhToken("");
+      toast({ title: "GitHub token removed" });
+    } catch (e: any) {
+      toast({ title: "Failed to remove token", description: e.message, variant: "destructive" });
+    }
   };
 
   const refreshDbStatus = async () => {
